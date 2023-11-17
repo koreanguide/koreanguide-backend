@@ -1,10 +1,12 @@
 package com.koreanguide.koreanguidebackend.domain.auth.service.impl;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.BaseResponseDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.SignInResponseDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.SignRequestDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpRequestDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
+import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
 import lombok.extern.slf4j.Slf4j;
@@ -34,15 +36,8 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public BaseResponseDto signUp(SignRequestDto signRequestDto) {
-        if(signRequestDto.getEmail() == null || signRequestDto.getPassword() == null) {
-            return BaseResponseDto.builder()
-                    .success(false)
-                    .msg("이메일 또는 비밀번호가 입력되지 않았습니다.")
-                    .build();
-        }
-
-        if (userRepository.findByEmail(signRequestDto.getEmail()) != null) {
+    public BaseResponseDto signUp(SignUpRequestDto signUpRequestDto) {
+        if (userRepository.findByEmail(signUpRequestDto.getEmail()) != null) {
             return BaseResponseDto.builder()
                     .success(false)
                     .msg("이미 가입된 이메일입니다.")
@@ -50,8 +45,12 @@ public class SignServiceImpl implements SignService {
         }
 
         User user = User.builder()
-                .email(signRequestDto.getEmail())
-                .password(passwordEncoder.encode(signRequestDto.getPassword()))
+                .email(signUpRequestDto.getEmail())
+                .nickname(signUpRequestDto.getNickname())
+                .userRole(signUpRequestDto.getUserRole())
+                .state(KoreaState.SEOUL)
+                .country(signUpRequestDto.getCountry())
+                .password(passwordEncoder.encode(signUpRequestDto.getPassword()))
                 .roles(Collections.singletonList("ROLE_USER"))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -66,20 +65,21 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public SignInResponseDto signIn(SignRequestDto signRequestDto) {
+    public SignInResponseDto signIn(SignInRequestDto signInRequestDto) {
         log.info("SignServiceImpl - signIn: 회원 조회 중");
-        User user = userRepository.getByEmail(signRequestDto.getEmail());
+        User user = userRepository.getByEmail(signInRequestDto.getEmail());
 
         if(user == null) {
-            log.info("SignServiceImpl - signIn: 회원 조회 실패");
+            log.error("SignServiceImpl - signIn: 회원 조회 실패");
             throw new RuntimeException("사용자 정보를 찾을 수 없습니다.");
         }
 
-        log.info("SignServiceImpl - signIn: email : {}", signRequestDto.getEmail());
+        log.info("SignServiceImpl - signIn: email : {}", signInRequestDto.getEmail());
 
         log.info("SignServiceImpl - signIn: 패스워드 비교 시작");
 
-        if (!passwordEncoder.matches(signRequestDto.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(signInRequestDto.getPassword(), user.getPassword())) {
+            log.error("SignServiceImpl - signIn: 비밀번호 불일치");
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
 

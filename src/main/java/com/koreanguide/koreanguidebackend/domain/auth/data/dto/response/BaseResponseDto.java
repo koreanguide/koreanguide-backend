@@ -1,4 +1,4 @@
-package com.koreanguide.koreanguidebackend.domain.auth.data.dto;
+package com.koreanguide.koreanguidebackend.domain.auth.data.dto.response;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;

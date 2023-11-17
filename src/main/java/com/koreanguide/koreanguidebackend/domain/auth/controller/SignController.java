@@ -1,7 +1,12 @@
 package com.koreanguide.koreanguidebackend.domain.auth.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.*;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpRequestDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.TokenRequestDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.TokenResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,18 +32,18 @@ public class SignController {
     }
 
     @PostMapping(value = "/signup")
-    public BaseResponseDto signUp(@RequestBody SignRequestDto signRequestDto) {
-        return signService.signUp(signRequestDto);
+    public BaseResponseDto signUp(@RequestBody SignUpRequestDto signUpRequestDto) {
+        return signService.signUp(signUpRequestDto);
     }
 
     @PostMapping(value = "/signin")
-    public SignInResponseDto signIn(@RequestBody SignRequestDto signRequestDto) throws RuntimeException {
-        log.info("SignController - SignIn: 로그인 시도, email: {}", signRequestDto.getEmail());
-        SignInResponseDto signInResponseDto = signService.signIn(signRequestDto);
+    public SignInResponseDto signIn(@RequestBody SignInRequestDto signInRequestDto) throws RuntimeException {
+        log.info("SignController - SignIn: 로그인 시도, email: {}", signInRequestDto.getEmail());
+        SignInResponseDto signInResponseDto = signService.signIn(signInRequestDto);
 
         if (signInResponseDto.isSuccess()) {
             log.info("SignController - signIn: 로그인 성공, email: {}, token: {}",
-                    signRequestDto.getEmail(),
+                    signInRequestDto.getEmail(),
                     signInResponseDto.getAccessToken()
             );
         }

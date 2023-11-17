@@ -1,4 +1,4 @@
-package com.koreanguide.koreanguidebackend.domain.auth.data.dto;
+package com.koreanguide.koreanguidebackend.domain.auth.data.dto.request;
 
 import lombok.*;
 

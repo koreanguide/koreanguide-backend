@@ -18,14 +18,14 @@ public class SwaggerConfiguration {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("kr.yuns.springinit"))
+                .apis(RequestHandlerSelectors.basePackage("com.koreanguide.koreanguidebackend"))
                 .paths(PathSelectors.any())
                 .build();
     }
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("Spring Boot Open API Test with Swaager")
-                .description("Spring-Init")
+                .title("KOREANGUIDE API Tester")
+                .description("KOREANGUIDE API Tester")
                 .version("1.0.0")
                 .build();
     }

@@ -1,4 +1,4 @@
-package com.koreanguide.koreanguidebackend.domain.auth.data.dto;
+package com.koreanguide.koreanguidebackend.domain.auth.data.dto.request;
 
 import lombok.*;
 
@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @ToString
 @Builder
-public class SignRequestDto {
+public class SignInRequestDto {
     private String email;
     private String password;
 }

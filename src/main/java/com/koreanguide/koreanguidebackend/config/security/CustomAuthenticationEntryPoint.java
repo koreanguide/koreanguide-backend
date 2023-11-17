@@ -1,7 +1,7 @@
 package com.koreanguide.koreanguidebackend.config.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.EntryPointErrorResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.EntryPointErrorResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
