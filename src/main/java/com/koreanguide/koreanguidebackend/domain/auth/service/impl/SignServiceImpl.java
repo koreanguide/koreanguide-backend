@@ -9,6 +9,8 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
+import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
+import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,16 +23,19 @@ import java.util.Collections;
 @Service
 public class SignServiceImpl implements SignService {
     private final UserRepository userRepository;
+    private final CreditRepository creditRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public SignServiceImpl(
             UserRepository userRepository,
+            CreditRepository creditRepository,
             JwtTokenProvider jwtTokenProvider,
             PasswordEncoder passwordEncoder
             ) {
         this.userRepository = userRepository;
+        this.creditRepository = creditRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
     }
@@ -57,6 +62,12 @@ public class SignServiceImpl implements SignService {
                 .build();
 
         userRepository.save(user);
+
+        creditRepository.save(Credit.builder()
+                        .recentUsed(LocalDateTime.now())
+                        .amount(0L)
+                        .user(user)
+                .build());
 
         return BaseResponseDto.builder()
                 .success(true)
