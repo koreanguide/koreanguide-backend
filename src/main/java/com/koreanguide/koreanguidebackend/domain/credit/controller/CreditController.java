@@ -2,6 +2,7 @@ package com.koreanguide.koreanguidebackend.domain.credit.controller;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.BankAccountApplyRequestDto;
+import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.TransactionCreditRequestDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.service.AccountService;
 import com.koreanguide.koreanguidebackend.domain.credit.service.CreditService;
@@ -23,27 +24,30 @@ public class CreditController {
 
     @PostMapping("/bank")
     public ResponseEntity<BaseResponseDto> applyBankAccount(
-            Long userId, BankAccountApplyRequestDto bankAccountApplyRequestDto) {
+            @RequestParam Long userId,
+            @RequestBody BankAccountApplyRequestDto bankAccountApplyRequestDto) {
         return accountService.applyBankAccount(userId, bankAccountApplyRequestDto);
     }
 
     @DeleteMapping("/bank")
-    public ResponseEntity<BaseResponseDto> removeBankAccount(Long userId) {
+    public ResponseEntity<BaseResponseDto> removeBankAccount(@RequestParam Long userId) {
         return accountService.removeBankAccount(userId);
     }
 
     @GetMapping("/")
-    public ResponseEntity<CreditResponseDto> checkBalance(Long userId) {
+    public ResponseEntity<CreditResponseDto> checkBalance(@RequestParam Long userId) {
         return creditService.checkBalance(userId);
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<CreditResponseDto> withdrawCredit(Long userId, Long amount) {
-        return creditService.withdrawCredit(userId, amount);
+    public ResponseEntity<CreditResponseDto> withdrawCredit(
+            @RequestBody TransactionCreditRequestDto transactionCreditRequestDto) {
+        return creditService.withdrawCredit(transactionCreditRequestDto);
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<CreditResponseDto> depositCredit(Long userId, Long amount) {
-        return creditService.depositCredit(userId, amount);
+    public ResponseEntity<CreditResponseDto> depositCredit(
+            @RequestBody TransactionCreditRequestDto transactionCreditRequestDto) {
+        return creditService.depositCredit(transactionCreditRequestDto);
     }
 }
