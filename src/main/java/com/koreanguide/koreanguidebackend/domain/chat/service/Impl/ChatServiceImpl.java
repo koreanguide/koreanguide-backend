@@ -5,12 +5,15 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.CreateChatRoomRequestDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatListResponseDto;
+import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatResponseDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatMessage;
 import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatRoom;
 import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatMessageRepository;
 import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatRoomRepository;
 import com.koreanguide.koreanguidebackend.domain.chat.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -92,6 +95,29 @@ public class ChatServiceImpl implements ChatService {
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(chatListResponseDtoList);
+    }
+
+    @Override
+    public ResponseEntity<List<ChatResponseDto>> getChatMsg(String roomId, Pageable pageable) {
+        Optional<ChatRoom> chatRoom = chatRoomRepository.findChatRoomByRoomId(roomId);
+
+        if(chatRoom.isEmpty()) {
+            throw new RuntimeException("채팅방을 찾을 수 없음");
+        }
+
+        Page<ChatMessage> chatMessages = chatMessageRepository.findAllByChatRoomOrderByDateDesc(chatRoom.get(), pageable);
+        List<ChatResponseDto> chatResponseDtoList = new ArrayList<>();
+
+        for(ChatMessage chatMessage : chatMessages.getContent()) { // getContent() 메소드 사용
+            chatResponseDtoList.add(ChatResponseDto.builder()
+                    .name(chatMessage.getUser().getNickname())
+                    .date(chatMessage.getDate())
+                    .msg(chatMessage.getMessage())
+                    .profileUrl(null)
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(chatResponseDtoList);
     }
 
     @Override

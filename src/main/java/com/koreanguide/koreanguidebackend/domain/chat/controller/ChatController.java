@@ -3,8 +3,11 @@ package com.koreanguide.koreanguidebackend.domain.chat.controller;
 import com.koreanguide.koreanguidebackend.common.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.CreateChatRoomRequestDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatListResponseDto;
+import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatResponseDto;
 import com.koreanguide.koreanguidebackend.domain.chat.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,5 +31,10 @@ public class ChatController {
     @GetMapping("/list")
     public ResponseEntity<List<ChatListResponseDto>> getChatList(@RequestParam Long userId) {
         return chatService.getChatList(userId);
+    }
+
+    @GetMapping("/")
+    public ResponseEntity<List<ChatResponseDto>> getChatMsg(@RequestParam String roomId, @PageableDefault(size = 10) Pageable pageable) {
+        return chatService.getChatMsg(roomId, pageable);
     }
 }
