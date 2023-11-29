@@ -66,7 +66,7 @@ public class CreditServiceImpl implements CreditService {
 
     @Override
     public ResponseEntity<CreditResponseDto> depositCredit(TransactionCreditRequestDto transactionCreditRequestDto) {
-        Optional<User> user = userRepository.findById(transactionCreditRequestDto.getAmount());
+        Optional<User> user = userRepository.findById(transactionCreditRequestDto.getUserId());
         LocalDateTime localDateTime = LocalDateTime.now();
 
         if(user.isEmpty()) {
