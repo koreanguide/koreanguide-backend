@@ -3,9 +3,11 @@ package com.koreanguide.koreanguidebackend.domain.credit.service.Impl;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.TransactionCreditRequestDto;
+import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditHistoryResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.CreditLog;
+import com.koreanguide.koreanguidebackend.domain.credit.data.enums.TransactionContent;
 import com.koreanguide.koreanguidebackend.domain.credit.data.enums.TransactionType;
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditLogRepository;
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRepository;
@@ -16,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -62,6 +66,63 @@ public class CreditServiceImpl implements CreditService {
                         .msg("정상 처리")
                         .amount(credit.get().getAmount())
                 .build());
+    }
+
+    public String getDetailContent(TransactionContent transactionContent) {
+        String DETAIL_CONTENT = "알 수 없음";
+
+        if(transactionContent.equals(TransactionContent.WITHDRAW_TO_ACCOUNT)) {
+            DETAIL_CONTENT = "크레딧 계좌 환급";
+        }
+
+        return DETAIL_CONTENT;
+    }
+
+    public String getTransactionType(TransactionType transactionType) {
+        String TRANSACTION_TYPE = "알 수 없음";
+
+        if(transactionType.equals(TransactionType.DEPOSIT)) {
+            TRANSACTION_TYPE = "입금";
+        } else if (transactionType.equals(TransactionType.WITHDRAW)) {
+            TRANSACTION_TYPE = "출금";
+        }
+
+        return TRANSACTION_TYPE;
+    }
+
+    @Override
+    public ResponseEntity<List<CreditHistoryResponseDto>> getCreditHistory(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            throw new RuntimeException("사용자를 찾을 수 없음");
+        }
+
+        Optional<Credit> credit = creditRepository.findByUser(user.get());
+        List<CreditHistoryResponseDto> creditHistoryResponseDtoList = new ArrayList<>();
+
+        if(credit.isEmpty()) {
+            creditRepository.save(Credit.builder()
+                    .amount(0L)
+                    .recentUsed(LocalDateTime.now())
+                    .user(user.get())
+                    .build());
+
+            return ResponseEntity.status(HttpStatus.OK).body(creditHistoryResponseDtoList);
+        } else {
+            List<CreditLog> creditLogList = creditLogRepository.findAllByCredit(credit.get());
+
+            for(CreditLog creditLog : creditLogList) {
+                creditHistoryResponseDtoList.add(CreditHistoryResponseDto.builder()
+                                .content(getDetailContent(creditLog.getTransactionContent()))
+                                .transactionType(getTransactionType(creditLog.getTransactionType()))
+                                .date(creditLog.getDate())
+                                .amount(creditLog.getAmount())
+                        .build());
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(creditHistoryResponseDtoList);
+        }
     }
 
     @Override
