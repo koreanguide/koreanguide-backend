@@ -3,12 +3,15 @@ package com.koreanguide.koreanguidebackend.domain.credit.controller;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.BankAccountApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.TransactionCreditRequestDto;
+import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditHistoryResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.service.AccountService;
 import com.koreanguide.koreanguidebackend.domain.credit.service.CreditService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/credit")
@@ -27,6 +30,11 @@ public class CreditController {
             @RequestParam Long userId,
             @RequestBody BankAccountApplyRequestDto bankAccountApplyRequestDto) {
         return accountService.applyBankAccount(userId, bankAccountApplyRequestDto);
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<CreditHistoryResponseDto>> getCreditHistory(@RequestParam Long userId) {
+        return creditService.getCreditHistory(userId);
     }
 
     @DeleteMapping("/bank")
