@@ -5,6 +5,7 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.BankAcc
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.TransactionCreditRequestDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditHistoryResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditResponseDto;
+import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditReturningRequestResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.service.AccountService;
 import com.koreanguide.koreanguidebackend.domain.credit.service.CreditService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,16 @@ public class CreditController {
     public CreditController(AccountService accountService, CreditService creditService) {
         this.accountService = accountService;
         this.creditService = creditService;
+    }
+
+    @PostMapping("/refund")
+    public ResponseEntity<BaseResponseDto> requestReturningToAccount(@RequestParam Long userId, Long amount) {
+        return accountService.requestReturningToAccount(userId, amount);
+    }
+
+    @GetMapping("/refund")
+    public ResponseEntity<List<CreditReturningRequestResponseDto>> getReturningHistory(@RequestParam Long userId) {
+        return accountService.getReturningHistory(userId);
     }
 
     @PostMapping("/bank")
