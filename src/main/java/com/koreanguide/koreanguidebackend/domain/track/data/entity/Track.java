@@ -43,16 +43,10 @@ public class Track {
     private String trackTitle;
 
     @Column(nullable = false)
-    private boolean useAutoTranslationViaTitle;
-
-    @Column(nullable = false)
     private String trackContent;
 
     @Column(nullable = false)
     private String trackPreview;
-
-    @Column(nullable = false)
-    private boolean useAutoTranslationViaContent;
 
     @Column(nullable = false)
     private String primaryImageUrl;
@@ -74,6 +68,12 @@ public class Track {
 
     @Column(nullable = false)
     private boolean useAble;
+
+    @Column(nullable = false)
+    private boolean blocked;
+
+    @Column
+    private String blockedReason;
 
     @CreatedDate
     @Column(updatable = false)

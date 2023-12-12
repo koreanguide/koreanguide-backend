@@ -29,7 +29,7 @@ public class TrackImage {
     @Column(nullable = false)
     private LocalDateTime uploadedDt;
 
-    @Column(nullable = false)
+    @Column
     private LocalDateTime disableDt;
 
     @ManyToOne
