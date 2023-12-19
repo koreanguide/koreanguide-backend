@@ -6,6 +6,7 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserReposi
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackImageApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackTagApplyRequestDto;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackResponseDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackImage;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackTag;
@@ -14,6 +15,7 @@ import com.koreanguide.koreanguidebackend.domain.track.service.TrackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,6 +32,58 @@ public class TrackServiceImpl implements TrackService {
     public TrackServiceImpl(TrackRepository trackRepository, UserRepository userRepository) {
         this.trackRepository = trackRepository;
         this.userRepository = userRepository;
+    }
+
+    @Override
+    public ResponseEntity<TrackResponseDto> getTrackById(Long userId, Long trackId) {
+        Track track = trackRepository.getById(trackId);
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.OK).body(TrackResponseDto.builder()
+                            .baseResponseDto(BaseResponseDto.builder()
+                                    .success(false)
+                                    .msg("사용자 정보를 확인할 수 없습니다.")
+                                    .build())
+                    .build());
+        }
+
+        if(!track.isVisible() && !track.getUser().equals(user.get())) {
+            return ResponseEntity.status(HttpStatus.OK).body(TrackResponseDto.builder()
+                            .baseResponseDto(BaseResponseDto.builder()
+                                    .success(false)
+                                    .msg("공개되지 않은 트랙입니다. 트랙 게시자만 열람할 수 있습니다.")
+                                    .build())
+                    .build());
+        }
+
+        if(track.isBlocked() && !track.getUser().equals(user.get())) {
+            return ResponseEntity.status(HttpStatus.OK).body(TrackResponseDto.builder()
+                            .baseResponseDto(BaseResponseDto.builder()
+                                    .success(false)
+                                    .msg("'" + track.getBlockedReason() + "'" + " 사유로 인해 더 이상 사용 및 열람할 수 없는 트랙입니다.")
+                                    .build())
+                    .build());
+        }
+
+        TrackResponseDto trackResponseDto = new TrackResponseDto();
+
+        trackResponseDto.setBaseResponseDto(BaseResponseDto.builder()
+                        .success(true)
+                        .msg("정상 처리되었습니다.")
+                .build());
+        trackResponseDto.setTrackTitle(track.getTrackTitle());
+        trackResponseDto.setTrackPreview(track.getTrackPreview());
+        trackResponseDto.setPrimaryImageUrl(track.getPrimaryImageUrl());
+        trackResponseDto.setImages(track.getTrackImages());
+        trackResponseDto.setTags(track.getTrackTags());
+        trackResponseDto.setName(track.getUser().getNickname());
+        trackResponseDto.setEmail(track.getUser().getEmail());
+        trackResponseDto.setVisible(track.isVisible());
+        trackResponseDto.setBlocked(track.isBlocked());
+        trackResponseDto.setBlockedReason(track.getBlockedReason());
+
+        return ResponseEntity.status(HttpStatus.OK).body(trackResponseDto);
     }
 
     @Override
@@ -90,6 +144,24 @@ public class TrackServiceImpl implements TrackService {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
                         .success(true)
                         .msg("트랙 생성이 완료되었습니다.")
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<BaseResponseDto> changeTracksVisible(Long userId, Long trackId) {
+        Track track = trackRepository.getById(trackId);
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            throw new RuntimeException("사용자를 찾을 수 없음");
+        }
+
+        track.setVisible(!track.isVisible());
+        trackRepository.save(track);
+
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
+                        .success(true)
+                        .msg(track.isVisible() ? "공개" : "비공개" + " 상태로 변경되었습니다.")
                 .build());
     }
 }

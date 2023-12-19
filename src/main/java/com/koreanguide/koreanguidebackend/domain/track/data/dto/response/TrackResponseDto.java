@@ -4,6 +4,8 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResp
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackImageApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackTagApplyRequestDto;
+import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackImage;
+import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackTag;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,14 +19,14 @@ import java.util.List;
 @Builder
 public class TrackResponseDto {
     private BaseResponseDto baseResponseDto;
-    private boolean agreePublicTerms;
-    private boolean agreeTerms;
-    private boolean agreePrivacyPolicy;
     private String trackTitle;
     private String trackPreview;
     private String primaryImageUrl;
-    private List<TrackImageApplyRequestDto> trackImageApplyRequestDtoList;
-    private List<TrackTagApplyRequestDto> trackTagApplyRequestDtoList;
-    private User user;
+    private List<TrackImage> images;
+    private List<TrackTag> tags;
+    private String name;
+    private String email;
     private boolean visible;
+    private boolean blocked;
+    private String blockedReason;
 }

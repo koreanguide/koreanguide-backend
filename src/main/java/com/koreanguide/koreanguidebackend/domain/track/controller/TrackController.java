@@ -26,6 +26,11 @@ public class TrackController {
 
     @GetMapping("/")
     public ResponseEntity<TrackResponseDto> getTrackById(@RequestParam Long userId, Long trackId) {
-        return null;
+        return trackService.getTrackById(userId, trackId);
+    }
+
+    @PostMapping("/visible")
+    public ResponseEntity<BaseResponseDto> changeTracksVisible(@RequestParam Long userId, Long trackId) {
+        return trackService.changeTracksVisible(userId, trackId);
     }
 }
