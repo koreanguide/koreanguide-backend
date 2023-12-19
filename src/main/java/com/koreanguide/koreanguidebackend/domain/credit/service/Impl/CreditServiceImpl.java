@@ -126,8 +126,9 @@ public class CreditServiceImpl implements CreditService {
     }
 
     @Override
-    public ResponseEntity<CreditResponseDto> depositCredit(TransactionCreditRequestDto transactionCreditRequestDto) {
-        Optional<User> user = userRepository.findById(transactionCreditRequestDto.getUserId());
+    public ResponseEntity<CreditResponseDto> depositCredit(Long userId,
+                                                           TransactionCreditRequestDto transactionCreditRequestDto) {
+        Optional<User> user = userRepository.findById(userId);
         LocalDateTime localDateTime = LocalDateTime.now();
 
         if(user.isEmpty()) {
@@ -173,8 +174,9 @@ public class CreditServiceImpl implements CreditService {
     }
 
     @Override
-    public ResponseEntity<CreditResponseDto> withdrawCredit(TransactionCreditRequestDto transactionCreditRequestDto) {
-        Optional<User> user = userRepository.findById(transactionCreditRequestDto.getUserId());
+    public ResponseEntity<CreditResponseDto> withdrawCredit(Long userId,
+                                                            TransactionCreditRequestDto transactionCreditRequestDto) {
+        Optional<User> user = userRepository.findById(userId);
 
         if(user.isEmpty()) {
             throw new RuntimeException("사용자를 찾을 수 없음");

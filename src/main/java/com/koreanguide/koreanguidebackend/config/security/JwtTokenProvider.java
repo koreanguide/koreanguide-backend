@@ -1,5 +1,7 @@
 package com.koreanguide.koreanguidebackend.config.security;
 
+import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
+import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -18,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
     private final UserDetailsService userDetailsService;
+    private final UserRepository userRepository;
 
     @Value("${springboot.jwt.secret}")
     private String secretKey;
@@ -72,6 +76,12 @@ public class JwtTokenProvider {
         String info = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
         log.info("JwtTokenProvider / getUserEmail(): 토큰 기반 회원 구별 정보 추출 완료, info : {}", info);
         return info;
+    }
+
+    public Long getUserIdByToken(String token) {
+        String info = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
+        User user = userRepository.getByEmail(info);
+        return user.getId();
     }
 
     public String refreshToken(String refreshToken, String email) {

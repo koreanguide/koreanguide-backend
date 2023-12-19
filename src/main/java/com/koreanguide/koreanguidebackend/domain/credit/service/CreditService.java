@@ -12,7 +12,9 @@ public interface CreditService {
 
     ResponseEntity<List<CreditHistoryResponseDto>> getCreditHistory(Long userId);
 
-    ResponseEntity<CreditResponseDto> depositCredit(TransactionCreditRequestDto transactionCreditRequestDto);
+    ResponseEntity<CreditResponseDto> depositCredit(Long userId,
+                                                    TransactionCreditRequestDto transactionCreditRequestDto);
 
-    ResponseEntity<CreditResponseDto> withdrawCredit(TransactionCreditRequestDto transactionCreditRequestDto);
+    ResponseEntity<CreditResponseDto> withdrawCredit(Long userId,
+                                                     TransactionCreditRequestDto transactionCreditRequestDto);
 }
