@@ -31,9 +31,29 @@ public class SignController {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
+    @PostMapping("/verify/request")
+    public ResponseEntity<?> requestEmailAuth(@RequestParam String email) {
+        signService.sendVerifyMail(email);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/verify/validate")
+    public ResponseEntity<?> validateEmail(@RequestParam String email, String authKey) {
+        if (signService.validateAuthKey(email, authKey)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
+
     @PostMapping(value = "/signup")
-    public BaseResponseDto signUp(@RequestBody SignUpRequestDto signUpRequestDto) {
-        return signService.signUp(signUpRequestDto);
+    public ResponseEntity<?> signUp(@RequestBody SignUpRequestDto signUpRequestDto) {
+        if (!signService.validateAuthKey(signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        signService.signUp(signUpRequestDto);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping(value = "/signin")

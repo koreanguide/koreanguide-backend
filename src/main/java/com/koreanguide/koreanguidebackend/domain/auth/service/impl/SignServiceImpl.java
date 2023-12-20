@@ -13,31 +13,73 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 public class SignServiceImpl implements SignService {
+    @Value("${spring.mail.username}")
+    private String from;
+
     private final UserRepository userRepository;
     private final CreditRepository creditRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final JavaMailSender mailSender;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Autowired
     public SignServiceImpl(
             UserRepository userRepository,
             CreditRepository creditRepository,
             JwtTokenProvider jwtTokenProvider,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            JavaMailSender mailSender,
+            RedisTemplate<String, String> redisTemplate
             ) {
         this.userRepository = userRepository;
         this.creditRepository = creditRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
+        this.mailSender = mailSender;
+        this.redisTemplate = redisTemplate;
+    }
+
+    private String generateAuthKey() {
+        Random random = new Random();
+        return String.valueOf(random.nextInt(1000000));
+    }
+
+    @Override
+    public void sendVerifyMail(String to) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(from);
+        message.setTo(to);
+        message.setSubject("회원가입 인증 메일입니다.");
+
+        String authKey = generateAuthKey();
+        redisTemplate.opsForValue().set(to, authKey);
+        redisTemplate.expire(to, 30, TimeUnit.MINUTES);
+
+        message.setText("인증번호는 " + authKey + "입니다.");
+
+        mailSender.send(message);
+    }
+
+    @Override
+    public boolean validateAuthKey(String email, String inputKey) {
+        String authKey = redisTemplate.opsForValue().get(email);
+        return inputKey.equals(authKey);
     }
 
     @Override

@@ -6,6 +6,10 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInReq
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 
 public interface SignService {
+    void sendVerifyMail(String to);
+
+    boolean validateAuthKey(String email, String inputKey);
+
     BaseResponseDto signUp(SignUpRequestDto signUpRequestDto);
     SignInResponseDto signIn(SignInRequestDto signInRequestDto);
 }
