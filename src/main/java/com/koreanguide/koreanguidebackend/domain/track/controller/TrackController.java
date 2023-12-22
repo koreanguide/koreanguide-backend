@@ -29,6 +29,15 @@ public class TrackController {
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
     })
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllTrackByUser(HttpServletRequest request) {
+        return trackService.getAllTrackByUser(jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
+    }
+
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
     @PostMapping("/")
     public ResponseEntity<BaseResponseDto> applyTrack(HttpServletRequest request,
                                                       @RequestBody TrackApplyRequestDto trackApplyRequestDto) {

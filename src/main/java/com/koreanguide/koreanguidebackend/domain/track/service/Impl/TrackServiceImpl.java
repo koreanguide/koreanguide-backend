@@ -34,6 +34,36 @@ public class TrackServiceImpl implements TrackService {
     }
 
     @Override
+    public ResponseEntity<?> getAllTrackByUser(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("사용자를 찾을 수 없음");
+        }
+
+        List<TrackResponseDto> trackResponseDtoList = new ArrayList<>();
+        List<Track> trackList = trackRepository.getAllByUser(user.get());
+
+        for(Track track : trackList) {
+            trackResponseDtoList.add(TrackResponseDto.builder()
+                            .trackTitle(track.getTrackTitle())
+                            .trackPreview(track.getTrackPreview())
+                            .primaryImageUrl(track.getPrimaryImageUrl())
+                            .images(track.getTrackImages())
+                            .tags(track.getTrackTags())
+                            .name(track.getUser().getNickname())
+                            .email(track.getUser().getEmail())
+                            .visible(track.isVisible())
+                            .blocked(track.isBlocked())
+                            .blockedReason(track.getBlockedReason())
+                            .star(track.isStar())
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(trackResponseDtoList);
+    }
+
+    @Override
     public ResponseEntity<TrackResponseDto> getTrackById(Long userId, Long trackId) {
         Track track = trackRepository.getById(trackId);
         Optional<User> user = userRepository.findById(userId);

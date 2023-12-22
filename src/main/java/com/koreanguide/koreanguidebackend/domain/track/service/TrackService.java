@@ -6,6 +6,8 @@ import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackRe
 import org.springframework.http.ResponseEntity;
 
 public interface TrackService {
+    ResponseEntity<?> getAllTrackByUser(Long userId);
+
     ResponseEntity<TrackResponseDto> getTrackById(Long userId, Long trackId);
 
     ResponseEntity<BaseResponseDto> applyTrack(Long userId, TrackApplyRequestDto trackApplyRequestDto);
