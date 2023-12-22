@@ -28,5 +28,6 @@ public class TrackResponseDto {
     private String email;
     private boolean visible;
     private boolean blocked;
+    private boolean star;
     private String blockedReason;
 }

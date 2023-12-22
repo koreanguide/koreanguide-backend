@@ -15,7 +15,6 @@ import com.koreanguide.koreanguidebackend.domain.track.service.TrackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -82,6 +81,7 @@ public class TrackServiceImpl implements TrackService {
         trackResponseDto.setVisible(track.isVisible());
         trackResponseDto.setBlocked(track.isBlocked());
         trackResponseDto.setBlockedReason(track.getBlockedReason());
+        trackResponseDto.setStar(track.isStar());
 
         return ResponseEntity.status(HttpStatus.OK).body(trackResponseDto);
     }
@@ -107,6 +107,7 @@ public class TrackServiceImpl implements TrackService {
         track.setTrackContent(trackApplyRequestDto.getTrackPreview());
         track.setTrackPreview(trackApplyRequestDto.getTrackPreview());
         track.setPrimaryImageUrl(trackApplyRequestDto.getPrimaryImageUrl());
+        track.setStar(false);
 
         List<TrackTag> trackTagList = new ArrayList<>();
 
@@ -163,5 +164,40 @@ public class TrackServiceImpl implements TrackService {
                         .success(true)
                         .msg(track.isVisible() ? "공개" : "비공개" + " 상태로 변경되었습니다.")
                 .build());
+    }
+
+    @Override
+    public ResponseEntity<?> changeTrackStar(Long userId, Long trackId) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("사용자를 찾을 수 없음");
+        }
+
+        Optional<Track> selectedTrack = trackRepository.findById(trackId);
+
+        if(selectedTrack.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("트랙을 찾을 수 없음");
+        }
+
+        if(!selectedTrack.get().getUser().equals(user.get())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("대표 사진 권한 부족");
+        }
+
+        List<Track> trackList = trackRepository.getAllByUser(user.get());
+
+        for(Track track : trackList) {
+            if(track.isStar()) {
+                track.setStar(false);
+            }
+
+            trackRepository.save(track);
+        }
+
+        Track newTrack = selectedTrack.get();
+        newTrack.setStar(true);
+        trackRepository.save(newTrack);
+
+        return ResponseEntity.status(HttpStatus.OK).body("정상 처리");
     }
 }

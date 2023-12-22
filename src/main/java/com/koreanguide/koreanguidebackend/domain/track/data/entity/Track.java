@@ -51,6 +51,9 @@ public class Track {
     @Column(nullable = false)
     private String primaryImageUrl;
 
+    @Column(nullable = false)
+    private boolean star;
+
     @OneToMany
     @JoinColumn(name = "image_id")
     private List<TrackImage> trackImages;

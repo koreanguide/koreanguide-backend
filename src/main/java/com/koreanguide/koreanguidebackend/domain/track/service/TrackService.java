@@ -11,4 +11,6 @@ public interface TrackService {
     ResponseEntity<BaseResponseDto> applyTrack(Long userId, TrackApplyRequestDto trackApplyRequestDto);
 
     ResponseEntity<BaseResponseDto> changeTracksVisible(Long userId, Long trackId);
+
+    ResponseEntity<?> changeTrackStar(Long userId, Long trackId);
 }
