@@ -4,12 +4,13 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpReq
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
+import org.springframework.http.ResponseEntity;
 
 public interface SignService {
     void sendVerifyMail(String to);
 
     boolean validateAuthKey(String email, String inputKey);
 
-    BaseResponseDto signUp(SignUpRequestDto signUpRequestDto);
+    ResponseEntity<?> signUp(SignUpRequestDto signUpRequestDto);
     SignInResponseDto signIn(SignInRequestDto signInRequestDto);
 }

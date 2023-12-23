@@ -7,6 +7,8 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInRe
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
+import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserRole;
+import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserType;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
@@ -15,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -55,6 +60,17 @@ public class SignServiceImpl implements SignService {
         this.redisTemplate = redisTemplate;
     }
 
+    private SignInResponseDto generateAuthToken(UserRole userRole, String email, List<String> roles) {
+        return SignInResponseDto.builder()
+                .accessToken(jwtTokenProvider.createAccessToken(String.valueOf(email), roles))
+                .refreshToken(jwtTokenProvider.createRefreshToken(String.valueOf(email)))
+                .email(email)
+                .success(true)
+                .msg("정상 로그인")
+                .isGuide(userRole.equals(UserRole.GUIDE))
+                .build();
+    }
+
     private String generateAuthKey() {
         Random random = new Random();
         return String.valueOf(random.nextInt(1000000));
@@ -83,12 +99,9 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public BaseResponseDto signUp(SignUpRequestDto signUpRequestDto) {
+    public ResponseEntity<?> signUp(SignUpRequestDto signUpRequestDto) {
         if (userRepository.findByEmail(signUpRequestDto.getEmail()) != null) {
-            return BaseResponseDto.builder()
-                    .success(false)
-                    .msg("이미 가입된 이메일입니다.")
-                    .build();
+            return ResponseEntity.status(HttpStatus.LOCKED).body("사용 중인 이메일 주소를 입력했습니다.");
         }
 
         User user = User.builder()
@@ -111,10 +124,8 @@ public class SignServiceImpl implements SignService {
                         .user(user)
                 .build());
 
-        return BaseResponseDto.builder()
-                .success(true)
-                .msg("회원가입이 완료되었습니다.")
-                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(
+                generateAuthToken(user.getUserRole(), user.getEmail(), user.getRoles()));
     }
 
     @Override
@@ -138,17 +149,8 @@ public class SignServiceImpl implements SignService {
 
         log.info("SignServiceImpl - signIn: 패스워드 일치");
 
-        log.info("SignServiceImpl - signIn: 토큰 발급 및 기본 정보 반환 준비 중");
-        SignInResponseDto signInResponseDto = SignInResponseDto.builder()
-                .accessToken(jwtTokenProvider.createAccessToken(String.valueOf(user.getEmail()), user.getRoles()))
-                .refreshToken(jwtTokenProvider.createRefreshToken(String.valueOf(user.getEmail())))
-                .email(user.getEmail())
-                .success(true)
-                .msg("로그인에 성공하였습니다.")
-                .build();
+        log.info("SignServiceImpl - signIn: 토큰 발급 및 기본 정보 반환 처리");
 
-        log.info("SignServiceImpl - signIn: 토큰 발급 및 기본 정보 반환 준비 완료");
-
-        return signInResponseDto;
+        return generateAuthToken(user.getUserRole(), user.getEmail(), user.getRoles());
     }
 }

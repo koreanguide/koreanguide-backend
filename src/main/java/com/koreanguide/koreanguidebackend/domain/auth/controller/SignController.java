@@ -52,8 +52,7 @@ public class SignController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        signService.signUp(signUpRequestDto);
-        return ResponseEntity.ok().build();
+        return signService.signUp(signUpRequestDto);
     }
 
     @PostMapping(value = "/signin")
