@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class TrackServiceImpl implements TrackService {
@@ -31,6 +32,28 @@ public class TrackServiceImpl implements TrackService {
     public TrackServiceImpl(TrackRepository trackRepository, UserRepository userRepository) {
         this.trackRepository = trackRepository;
         this.userRepository = userRepository;
+    }
+
+    @Override
+    public ResponseEntity<?> getRandomTrack() {
+        List<Track> trackList = trackRepository.findAll();
+        int randomIndex = new Random().nextInt(trackList.size());
+        Track track = trackList.get(randomIndex);
+        TrackResponseDto trackResponseDto = TrackResponseDto.builder()
+                .trackTitle(track.getTrackTitle())
+                .trackPreview(track.getTrackPreview())
+                .primaryImageUrl(track.getPrimaryImageUrl())
+                .images(track.getTrackImages())
+                .tags(track.getTrackTags())
+                .name(track.getUser().getNickname())
+                .email(track.getUser().getEmail())
+                .visible(track.isVisible())
+                .blocked(track.isBlocked())
+                .blockedReason(track.getBlockedReason())
+                .star(track.isStar())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(trackResponseDto);
     }
 
     @Override
