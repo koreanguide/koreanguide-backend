@@ -120,33 +120,29 @@ public class AccountServiceImpl implements AccountService {
                                                             BankAccountApplyRequestDto bankAccountApplyRequestDto) {
         Optional<User> user = userRepository.findById(userId);
 
-        try {
-            if(user.isEmpty()) {
-                throw new RuntimeException("사용자를 찾을 수 없음");
-            }
+        if(user.isEmpty()) {
+            throw new RuntimeException("사용자를 찾을 수 없음");
+        }
 
-            Optional<BankAccounts> bankAccounts = bankAccountsRepository.findBankAccountsByUser(user.get());
+        Optional<BankAccounts> bankAccounts = bankAccountsRepository.findBankAccountsByUser(user.get());
 
-            if(bankAccounts.isPresent()) {
-                bankAccountsRepository.save(BankAccounts.builder()
-                        .accountProvider(bankAccountApplyRequestDto.getBankAccountProvider())
-                        .accountNumber(bankAccountApplyRequestDto.getBankAccountNumber())
-                        .accountHolderName(bankAccountApplyRequestDto.getName())
-                        .verified(true)
-                        .user(user.get())
-                        .appliedAt(LocalDateTime.now())
-                        .build());
-            } else {
-                BankAccounts foundBankAccounts = bankAccounts.get();
-                foundBankAccounts.setAccountProvider(bankAccountApplyRequestDto.getBankAccountProvider());
-                foundBankAccounts.setAccountHolderName(bankAccountApplyRequestDto.getName());
-                foundBankAccounts.setAccountNumber(bankAccountApplyRequestDto.getBankAccountNumber());
-                foundBankAccounts.setAppliedAt(LocalDateTime.now());
+        if(bankAccounts.isEmpty()) {
+            bankAccountsRepository.save(BankAccounts.builder()
+                    .accountProvider(bankAccountApplyRequestDto.getBankAccountProvider())
+                    .accountNumber(bankAccountApplyRequestDto.getBankAccountNumber())
+                    .accountHolderName(bankAccountApplyRequestDto.getName())
+                    .verified(true)
+                    .user(user.get())
+                    .appliedAt(LocalDateTime.now())
+                    .build());
+        } else {
+            BankAccounts foundBankAccounts = bankAccounts.get();
+            foundBankAccounts.setAccountProvider(bankAccountApplyRequestDto.getBankAccountProvider());
+            foundBankAccounts.setAccountHolderName(bankAccountApplyRequestDto.getName());
+            foundBankAccounts.setAccountNumber(bankAccountApplyRequestDto.getBankAccountNumber());
+            foundBankAccounts.setAppliedAt(LocalDateTime.now());
 
-                bankAccountsRepository.save(foundBankAccounts);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            bankAccountsRepository.save(foundBankAccounts);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
