@@ -6,8 +6,10 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInReq
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import org.springframework.http.ResponseEntity;
 
+import javax.mail.MessagingException;
+
 public interface SignService {
-    void sendVerifyMail(String to);
+    void sendVerifyMail(String to) throws MessagingException;
 
     boolean validateAuthKey(String email, String inputKey);
 

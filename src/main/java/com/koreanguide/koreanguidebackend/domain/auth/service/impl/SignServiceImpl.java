@@ -21,9 +21,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring5.SpringTemplateEngine;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -42,6 +47,7 @@ public class SignServiceImpl implements SignService {
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
     private final RedisTemplate<String, String> redisTemplate;
+    private SpringTemplateEngine springTemplateEngine;
 
     @Autowired
     public SignServiceImpl(
@@ -50,7 +56,8 @@ public class SignServiceImpl implements SignService {
             JwtTokenProvider jwtTokenProvider,
             PasswordEncoder passwordEncoder,
             JavaMailSender mailSender,
-            RedisTemplate<String, String> redisTemplate
+            RedisTemplate<String, String> redisTemplate,
+            SpringTemplateEngine springTemplateEngine
             ) {
         this.userRepository = userRepository;
         this.creditRepository = creditRepository;
@@ -58,6 +65,7 @@ public class SignServiceImpl implements SignService {
         this.passwordEncoder = passwordEncoder;
         this.mailSender = mailSender;
         this.redisTemplate = redisTemplate;
+        this.springTemplateEngine = springTemplateEngine;
     }
 
     private SignInResponseDto generateAuthToken(UserRole userRole, String email, List<String> roles) {
@@ -77,19 +85,24 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public void sendVerifyMail(String to) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(from);
-        message.setTo(to);
-        message.setSubject("회원가입 인증 메일입니다.");
+    public void sendVerifyMail(String to) throws MessagingException {
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
+
+        mimeMessageHelper.setTo(to);
+        mimeMessageHelper.setSubject("KOREAN GUIDE 이메일 인증 안내");
 
         String authKey = generateAuthKey();
         redisTemplate.opsForValue().set(to, authKey);
         redisTemplate.expire(to, 30, TimeUnit.MINUTES);
 
-        message.setText("인증번호는 " + authKey + "입니다.");
+        Context context = new Context();
+        context.setVariable("key", authKey);
 
-        mailSender.send(message);
+        String html = springTemplateEngine.process("verifyEmail.html", context);
+        mimeMessageHelper.setText(html, true);
+
+        mailSender.send(mimeMessage);
     }
 
     @Override
@@ -102,6 +115,10 @@ public class SignServiceImpl implements SignService {
     public ResponseEntity<?> signUp(SignUpRequestDto signUpRequestDto) {
         if (userRepository.findByEmail(signUpRequestDto.getEmail()) != null) {
             return ResponseEntity.status(HttpStatus.LOCKED).body("사용 중인 이메일 주소를 입력했습니다.");
+        }
+
+        if(!validateAuthKey(signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 인증이 완료되지 않았거나, 인증 유효 시간이 만료되었습니다.");
         }
 
         User user = User.builder()

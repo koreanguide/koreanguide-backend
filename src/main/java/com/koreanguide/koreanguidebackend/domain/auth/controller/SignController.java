@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.mail.MessagingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ public class SignController {
     }
 
     @PostMapping("/verify/request")
-    public ResponseEntity<?> requestEmailAuth(@RequestParam String email) {
+    public ResponseEntity<?> requestEmailAuth(@RequestParam String email) throws MessagingException {
         signService.sendVerifyMail(email);
         return ResponseEntity.ok().build();
     }
