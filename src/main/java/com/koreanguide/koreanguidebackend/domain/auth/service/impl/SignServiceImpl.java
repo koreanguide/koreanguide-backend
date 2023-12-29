@@ -121,6 +121,18 @@ public class SignServiceImpl implements SignService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 인증이 완료되지 않았거나, 인증 유효 시간이 만료되었습니다.");
         }
 
+        String emailPattern = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
+        String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
+
+        if (!signUpRequestDto.getEmail().matches(emailPattern)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("유효하지 않은 이메일 형식입니다.");
+        }
+
+        if (!signUpRequestDto.getPassword().matches(passwordPattern)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    "비밀번호는 8자리 이상이며, 특수문자, 대문자, 숫자를 각각 최소 1개 이상 포함해야 합니다.");
+        }
+
         User user = User.builder()
                 .email(signUpRequestDto.getEmail())
                 .nickname(signUpRequestDto.getNickname())
