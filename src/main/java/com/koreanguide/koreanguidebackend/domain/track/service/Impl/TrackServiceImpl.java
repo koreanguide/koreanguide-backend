@@ -10,7 +10,9 @@ import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackRe
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackImage;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackTag;
+import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackImageRepository;
 import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackRepository;
+import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackTagRepository;
 import com.koreanguide.koreanguidebackend.domain.track.service.TrackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,11 +29,16 @@ import java.util.Random;
 public class TrackServiceImpl implements TrackService {
     private final TrackRepository trackRepository;
     private final UserRepository userRepository;
+    private final TrackImageRepository trackImageRepository;
+    private final TrackTagRepository trackTagRepository;
 
     @Autowired
-    public TrackServiceImpl(TrackRepository trackRepository, UserRepository userRepository) {
+    public TrackServiceImpl(TrackRepository trackRepository, UserRepository userRepository,
+                            TrackImageRepository trackImageRepository, TrackTagRepository trackTagRepository) {
         this.trackRepository = trackRepository;
         this.userRepository = userRepository;
+        this.trackImageRepository = trackImageRepository;
+        this.trackTagRepository = trackTagRepository;
     }
 
     @Override
@@ -43,8 +50,8 @@ public class TrackServiceImpl implements TrackService {
                 .trackTitle(track.getTrackTitle())
                 .trackPreview(track.getTrackPreview())
                 .primaryImageUrl(track.getPrimaryImageUrl())
-                .images(track.getTrackImages())
-                .tags(track.getTrackTags())
+//                .images(track.getTrackImages())
+//                .tags(track.getTrackTags())
                 .name(track.getUser().getNickname())
                 .email(track.getUser().getEmail())
                 .visible(track.isVisible())
@@ -68,12 +75,14 @@ public class TrackServiceImpl implements TrackService {
         List<Track> trackList = trackRepository.getAllByUser(user.get());
 
         for(Track track : trackList) {
+            List<TrackImage> trackImageList = trackImageRepository.findAllByUser(user.get());
+            List<TrackTag> trackTagList = trackTagRepository.findAllByUser(user.get());
             trackResponseDtoList.add(TrackResponseDto.builder()
                             .trackTitle(track.getTrackTitle())
                             .trackPreview(track.getTrackPreview())
                             .primaryImageUrl(track.getPrimaryImageUrl())
-                            .images(track.getTrackImages())
-                            .tags(track.getTrackTags())
+                            .images(trackImageList)
+                            .tags(trackTagList)
                             .name(track.getUser().getNickname())
                             .email(track.getUser().getEmail())
                             .visible(track.isVisible())
@@ -127,8 +136,8 @@ public class TrackServiceImpl implements TrackService {
         trackResponseDto.setTrackTitle(track.getTrackTitle());
         trackResponseDto.setTrackPreview(track.getTrackPreview());
         trackResponseDto.setPrimaryImageUrl(track.getPrimaryImageUrl());
-        trackResponseDto.setImages(track.getTrackImages());
-        trackResponseDto.setTags(track.getTrackTags());
+//        trackResponseDto.setImages(track.getTrackImages());
+//        trackResponseDto.setTags(track.getTrackTags());
         trackResponseDto.setName(track.getUser().getNickname());
         trackResponseDto.setEmail(track.getUser().getEmail());
         trackResponseDto.setVisible(track.isVisible());
@@ -161,31 +170,6 @@ public class TrackServiceImpl implements TrackService {
         track.setTrackPreview(trackApplyRequestDto.getTrackPreview());
         track.setPrimaryImageUrl(trackApplyRequestDto.getPrimaryImageUrl());
         track.setStar(false);
-
-        List<TrackTag> trackTagList = new ArrayList<>();
-
-        for(TrackTagApplyRequestDto trackTagApplyRequestDto : trackApplyRequestDto.getTrackTagApplyRequestDtoList()) {
-            trackTagList.add(TrackTag.builder()
-                    .track(track)
-                    .tagName(trackTagApplyRequestDto.getTagName())
-                    .uploadedDt(CURRENT_TIME)
-                    .build());
-        }
-
-        track.setTrackTags(trackTagList);
-
-        List<TrackImage> trackImageList = new ArrayList<>();
-
-        for(TrackImageApplyRequestDto trackImageApplyRequestDto : trackApplyRequestDto.getTrackImageApplyRequestDtoList()) {
-            trackImageList.add(TrackImage.builder()
-                            .imageUrl(trackImageApplyRequestDto.getImageUrl())
-                            .useAble(true)
-                            .uploadedDt(CURRENT_TIME)
-                            .track(track)
-                    .build());
-        }
-
-        track.setTrackImages(trackImageList);
         track.setUser(user.get());
         track.setVisible(trackApplyRequestDto.isVisible());
         track.setUseAble(true);
@@ -194,6 +178,25 @@ public class TrackServiceImpl implements TrackService {
         track.setBlocked(false);
 
         trackRepository.save(track);
+
+        for(TrackTagApplyRequestDto trackTagApplyRequestDto : trackApplyRequestDto.getTrackTagApplyRequestDtoList()) {
+            TrackTag trackTag = TrackTag.builder()
+                    .track(track)
+                    .tagName(trackTagApplyRequestDto.getTagName())
+                    .uploadedDt(CURRENT_TIME)
+                    .build();
+            trackTagRepository.save(trackTag);
+        }
+
+        for(TrackImageApplyRequestDto trackImageApplyRequestDto : trackApplyRequestDto.getTrackImageApplyRequestDtoList()) {
+            TrackImage trackImage = TrackImage.builder()
+                    .imageUrl(trackImageApplyRequestDto.getImageUrl())
+                    .useAble(true)
+                    .uploadedDt(CURRENT_TIME)
+                    .track(track)
+                    .build();
+            trackImageRepository.save(trackImage);
+        }
 
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
                         .success(true)

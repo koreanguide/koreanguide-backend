@@ -54,14 +54,6 @@ public class Track {
     @Column(nullable = false)
     private boolean star;
 
-    @OneToMany
-    @JoinColumn(name = "image_id")
-    private List<TrackImage> trackImages;
-
-    @OneToMany
-    @JoinColumn(name = "tag_id")
-    private List<TrackTag> trackTags;
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

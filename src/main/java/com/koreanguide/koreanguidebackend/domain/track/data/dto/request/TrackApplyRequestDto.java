@@ -24,6 +24,6 @@ public class TrackApplyRequestDto {
     private String primaryImageUrl;
     private List<TrackImageApplyRequestDto> trackImageApplyRequestDtoList;
     private List<TrackTagApplyRequestDto> trackTagApplyRequestDtoList;
-    private User user;
+//    private User user;
     private boolean visible;
 }
