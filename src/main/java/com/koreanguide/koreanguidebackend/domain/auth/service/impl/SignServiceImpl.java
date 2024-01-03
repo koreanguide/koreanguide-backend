@@ -82,9 +82,16 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public ResponseEntity<?> sendVerifyMail(String to) throws MessagingException {
-//        if(!Objects.requireNonNull(redisTemplate.opsForValue().get(to)).isEmpty()) {
-//            TimeUnit timeUnit = redisTemplate.expire()
-//        }
+        Long expireTime = redisTemplate.getExpire(to + ":resendTime", TimeUnit.SECONDS);
+        if(expireTime > 0) {
+            long min = expireTime / 60;
+            long sec = expireTime % 60;
+            String timeLeft = String.format("%02d:%02d", min, sec);
+            return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
+                            .en("You can resend the email authentication after " + timeLeft + ".")
+                            .ko(timeLeft + " 후에 이메일 인증 재발송이 가능합니다.")
+                    .build());
+        }
 
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
@@ -95,6 +102,9 @@ public class SignServiceImpl implements SignService {
         String authKey = generateAuthKey();
         redisTemplate.opsForValue().set(to, authKey);
         redisTemplate.expire(to, 30, TimeUnit.MINUTES);
+
+        redisTemplate.opsForValue().set(to + ":resendTime", authKey);
+        redisTemplate.expire(to + ":resendTime", 1, TimeUnit.MINUTES);
 
         Context context = new Context();
         context.setVariable("key", authKey);
