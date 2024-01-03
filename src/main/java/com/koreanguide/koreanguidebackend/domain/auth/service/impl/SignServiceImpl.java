@@ -80,8 +80,17 @@ public class SignServiceImpl implements SignService {
         return String.valueOf(random.nextInt(1000000));
     }
 
+    private boolean matchEmailPattern(String email) {
+        String emailPattern = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
+        return email.matches(emailPattern);
+    }
+
     @Override
     public ResponseEntity<?> sendVerifyMail(String to) throws MessagingException {
+        if(!matchEmailPattern(to)) {
+            throw new RuntimeException("이메일 형식 입력 오류");
+        }
+        
         Long expireTime = redisTemplate.getExpire(to + ":validateSignUpEmail", TimeUnit.SECONDS);
         if(expireTime > 0) {
             long min = expireTime / 60;
@@ -159,12 +168,11 @@ public class SignServiceImpl implements SignService {
                     );
         }
 
-        String emailPattern = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
-        String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
-
-        if (!signUpRequestDto.getEmail().matches(emailPattern)) {
+        if(!matchEmailPattern(signUpRequestDto.getEmail())) {
             throw new RuntimeException("이메일 형식 입력 오류");
         }
+
+        String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
 
         if (!signUpRequestDto.getPassword().matches(passwordPattern)) {
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(
