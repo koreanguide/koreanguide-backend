@@ -31,10 +31,7 @@ import org.thymeleaf.spring5.SpringTemplateEngine;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -84,7 +81,11 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public void sendVerifyMail(String to) throws MessagingException {
+    public ResponseEntity<?> sendVerifyMail(String to) throws MessagingException {
+//        if(!Objects.requireNonNull(redisTemplate.opsForValue().get(to)).isEmpty()) {
+//            TimeUnit timeUnit = redisTemplate.expire()
+//        }
+
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
 
@@ -102,6 +103,11 @@ public class SignServiceImpl implements SignService {
         mimeMessageHelper.setText(html, true);
 
         mailSender.send(mimeMessage);
+
+        return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
+                        .en("A membership authentication email has been sent normally.")
+                        .ko("회원가입 인증 이메일이 정상적으로 발송되었습니다.")
+                .build());
     }
 
     @Override

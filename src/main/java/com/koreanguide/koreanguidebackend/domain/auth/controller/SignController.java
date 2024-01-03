@@ -5,6 +5,7 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInReq
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.TokenRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.TokenResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
@@ -34,8 +35,7 @@ public class SignController {
 
     @PostMapping("/verify/request")
     public ResponseEntity<?> requestEmailAuth(@RequestParam String email) throws MessagingException {
-        signService.sendVerifyMail(email);
-        return ResponseEntity.ok().build();
+        return signService.sendVerifyMail(email);
     }
 
     @PostMapping("/verify/validate")
@@ -43,7 +43,11 @@ public class SignController {
         if (signService.validateAuthKey(email, authKey)) {
             return ResponseEntity.ok().build();
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    SignAlertResponseDto.builder()
+                            .ko("이메일 인증 번호가 일치하지 않습니다.")
+                            .en("Email authentication number does not match.")
+                            .build());
         }
     }
 
@@ -59,16 +63,6 @@ public class SignController {
     @PostMapping(value = "/signin")
     public ResponseEntity<?> signIn(@RequestBody SignInRequestDto signInRequestDto) throws RuntimeException {
         return signService.signIn(signInRequestDto);
-//        log.info("SignController - SignIn: 로그인 시도, email: {}", signInRequestDto.getEmail());
-//        SignInResponseDto signInResponseDto = signService.signIn(signInRequestDto);
-//
-//        if (signInResponseDto.isSuccess()) {
-//            log.info("SignController - signIn: 로그인 성공, email: {}, token: {}",
-//                    signInRequestDto.getEmail(),
-//                    signInResponseDto.getAccessToken()
-//            );
-//        }
-//        return signInResponseDto;
     }
 
     @PostMapping(value = "/refresh")
