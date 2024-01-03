@@ -100,8 +100,8 @@ public class SignServiceImpl implements SignService {
         mimeMessageHelper.setSubject("KOREAN GUIDE 이메일 인증 안내");
 
         String authKey = generateAuthKey();
-        redisTemplate.opsForValue().set(to, authKey);
-        redisTemplate.expire(to, 30, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(to + ":validateOnly", authKey);
+        redisTemplate.expire(to + ":validateOnly", 30, TimeUnit.MINUTES);
 
         redisTemplate.opsForValue().set(to + ":resendTime", authKey);
         redisTemplate.expire(to + ":resendTime", 1, TimeUnit.MINUTES);
@@ -122,7 +122,7 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public boolean validateAuthKey(String email, String inputKey) {
-        String authKey = redisTemplate.opsForValue().get(email);
+        String authKey = redisTemplate.opsForValue().get(email + ":validateOnly");
         return inputKey.equals(authKey);
     }
 
