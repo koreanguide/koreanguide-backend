@@ -82,7 +82,7 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public ResponseEntity<?> sendVerifyMail(String to) throws MessagingException {
-        Long expireTime = redisTemplate.getExpire(to + ":resendTime", TimeUnit.SECONDS);
+        Long expireTime = redisTemplate.getExpire(to + ":validateSignUpEmail", TimeUnit.SECONDS);
         if(expireTime > 0) {
             long min = expireTime / 60;
             long sec = expireTime % 60;
@@ -100,11 +100,11 @@ public class SignServiceImpl implements SignService {
         mimeMessageHelper.setSubject("KOREAN GUIDE 이메일 인증 안내");
 
         String authKey = generateAuthKey();
-        redisTemplate.opsForValue().set(to + ":validateOnly", authKey);
-        redisTemplate.expire(to + ":validateOnly", 30, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(to + ":validateSignUpEmail", authKey);
+        redisTemplate.expire(to + ":validateSignUpEmail", 30, TimeUnit.MINUTES);
 
-        redisTemplate.opsForValue().set(to + ":resendTime", authKey);
-        redisTemplate.expire(to + ":resendTime", 1, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(to + ":validateSignUpEmailResendTime", authKey);
+        redisTemplate.expire(to + ":validateSignUpEmailResendTime", 1, TimeUnit.MINUTES);
 
         Context context = new Context();
         context.setVariable("key", authKey);
@@ -122,7 +122,7 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public boolean validateAuthKey(String email, String inputKey) {
-        String authKey = redisTemplate.opsForValue().get(email + ":validateOnly");
+        String authKey = redisTemplate.opsForValue().get(email + ":validateSignUpEmail");
         return inputKey.equals(authKey);
     }
 
