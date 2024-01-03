@@ -57,17 +57,18 @@ public class SignController {
     }
 
     @PostMapping(value = "/signin")
-    public SignInResponseDto signIn(@RequestBody SignInRequestDto signInRequestDto) throws RuntimeException {
-        log.info("SignController - SignIn: 로그인 시도, email: {}", signInRequestDto.getEmail());
-        SignInResponseDto signInResponseDto = signService.signIn(signInRequestDto);
-
-        if (signInResponseDto.isSuccess()) {
-            log.info("SignController - signIn: 로그인 성공, email: {}, token: {}",
-                    signInRequestDto.getEmail(),
-                    signInResponseDto.getAccessToken()
-            );
-        }
-        return signInResponseDto;
+    public ResponseEntity<?> signIn(@RequestBody SignInRequestDto signInRequestDto) throws RuntimeException {
+        return signService.signIn(signInRequestDto);
+//        log.info("SignController - SignIn: 로그인 시도, email: {}", signInRequestDto.getEmail());
+//        SignInResponseDto signInResponseDto = signService.signIn(signInRequestDto);
+//
+//        if (signInResponseDto.isSuccess()) {
+//            log.info("SignController - signIn: 로그인 성공, email: {}, token: {}",
+//                    signInRequestDto.getEmail(),
+//                    signInResponseDto.getAccessToken()
+//            );
+//        }
+//        return signInResponseDto;
     }
 
     @PostMapping(value = "/refresh")

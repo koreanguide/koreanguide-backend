@@ -3,6 +3,7 @@ package com.koreanguide.koreanguidebackend.domain.auth.service.impl;
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
@@ -32,6 +33,7 @@ import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -68,15 +70,12 @@ public class SignServiceImpl implements SignService {
         this.springTemplateEngine = springTemplateEngine;
     }
 
-    private SignInResponseDto generateAuthToken(UserRole userRole, String email, List<String> roles) {
-        return SignInResponseDto.builder()
-                .accessToken(jwtTokenProvider.createAccessToken(String.valueOf(email), roles))
-                .refreshToken(jwtTokenProvider.createRefreshToken(String.valueOf(email)))
-                .email(email)
-                .success(true)
-                .msg("정상 로그인")
-                .isGuide(userRole.equals(UserRole.GUIDE))
-                .build();
+    private String generateAccessToken(String email, List<String> roles) {
+        return jwtTokenProvider.createAccessToken(String.valueOf(email), roles);
+    }
+
+    private String generateRefreshToken(String email) {
+        return jwtTokenProvider.createRefreshToken(String.valueOf(email));
     }
 
     private String generateAuthKey() {
@@ -113,24 +112,53 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public ResponseEntity<?> signUp(SignUpRequestDto signUpRequestDto) {
-        if (userRepository.findByEmail(signUpRequestDto.getEmail()) != null) {
-            return ResponseEntity.status(HttpStatus.LOCKED).body("사용 중인 이메일 주소를 입력했습니다.");
+        Optional<User> foundUserByEmail = userRepository.findByEmail(signUpRequestDto.getEmail());
+        Optional<User> foundUserByNickname = userRepository.findByNickname(signUpRequestDto.getNickname());
+
+        if (foundUserByEmail.isPresent()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    SignAlertResponseDto.builder()
+                            .ko("이미 서비스에 등록된 이메일 주소입니다. 다른 이메일 주소를 사용하거나 로그인을 시도하십시오.")
+                            .en("This email address is already registered with the service. " +
+                                    "Please use a different email address or try to sign-in.")
+                            .build()
+                    );
+        }
+
+        if(foundUserByNickname.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    SignAlertResponseDto.builder()
+                            .ko("사용할 수 없는 닉네임입니다. 다른 닉네임을 선택하십시오.")
+                            .en("This is a nickname that cannot be used. Please select a different nickname.")
+                            .build()
+            );
         }
 
         if(!validateAuthKey(signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 인증이 완료되지 않았거나, 인증 유효 시간이 만료되었습니다.");
+            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(
+                    SignAlertResponseDto.builder()
+                            .ko("이메일 인증 유효 시간이 만료되었습니다. 이메일 인증을 다시 시도하십시오.")
+                            .en("Email authentication has expired. Please try email authentication again.")
+                            .build()
+                    );
         }
 
         String emailPattern = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
         String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
 
         if (!signUpRequestDto.getEmail().matches(emailPattern)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("유효하지 않은 이메일 형식입니다.");
+            throw new RuntimeException("이메일 형식 입력 오류");
         }
 
         if (!signUpRequestDto.getPassword().matches(passwordPattern)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    "비밀번호는 8자리 이상이며, 특수문자, 대문자, 숫자를 각각 최소 1개 이상 포함해야 합니다.");
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(
+                    SignAlertResponseDto.builder()
+                            .ko("비밀번호는 8자리 이상이며, 특수문자, 대문자, 숫자를 각각 최소 1개 이상 포함해야 합니다.")
+                            .en("Password cannot be used. Configure your password with at least 8 English " +
+                                    "characters, at least 1 special character, at least 1 uppercase character, " +
+                                    "and at least 1 character number.")
+                            .build()
+                    );
         }
 
         User user = User.builder()
@@ -153,33 +181,35 @@ public class SignServiceImpl implements SignService {
                         .user(user)
                 .build());
 
-        return ResponseEntity.status(HttpStatus.OK).body(
-                generateAuthToken(user.getUserRole(), user.getEmail(), user.getRoles()));
+        return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
+                .isGuide(user.getUserRole().equals(UserRole.GUIDE))
+                .accessToken(generateAccessToken(user.getEmail(), user.getRoles()))
+                .refreshToken(generateRefreshToken(user.getEmail()))
+                .email(user.getEmail())
+                .msg("로그인 성공")
+                .success(true)
+                .build());
     }
 
     @Override
-    public SignInResponseDto signIn(SignInRequestDto signInRequestDto) {
-        log.info("SignServiceImpl - signIn: 회원 조회 중");
-        User user = userRepository.getByEmail(signInRequestDto.getEmail());
+    public ResponseEntity<?> signIn(SignInRequestDto signInRequestDto) {
+        Optional<User> user = userRepository.findByEmail(signInRequestDto.getEmail());
 
-        if(user == null) {
-            log.error("SignServiceImpl - signIn: 회원 조회 실패");
-            throw new RuntimeException("사용자 정보를 찾을 수 없습니다.");
+        if(user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("등록되지 않은 회원입니다.");
         }
 
-        log.info("SignServiceImpl - signIn: email : {}", signInRequestDto.getEmail());
-
-        log.info("SignServiceImpl - signIn: 패스워드 비교 시작");
-
-        if (!passwordEncoder.matches(signInRequestDto.getPassword(), user.getPassword())) {
-            log.error("SignServiceImpl - signIn: 비밀번호 불일치");
-            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        if (!passwordEncoder.matches(signInRequestDto.getPassword(), user.get().getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 또는 비밀번호가 일치하지 않습니다.");
         }
 
-        log.info("SignServiceImpl - signIn: 패스워드 일치");
-
-        log.info("SignServiceImpl - signIn: 토큰 발급 및 기본 정보 반환 처리");
-
-        return generateAuthToken(user.getUserRole(), user.getEmail(), user.getRoles());
+        return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
+                        .isGuide(user.get().getUserRole().equals(UserRole.GUIDE))
+                        .accessToken(generateAccessToken(user.get().getEmail(), user.get().getRoles()))
+                        .refreshToken(generateRefreshToken(user.get().getEmail()))
+                        .email(user.get().getEmail())
+                        .msg("로그인 성공")
+                        .success(true)
+                .build());
     }
 }

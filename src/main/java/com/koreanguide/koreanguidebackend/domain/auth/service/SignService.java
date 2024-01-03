@@ -14,5 +14,5 @@ public interface SignService {
     boolean validateAuthKey(String email, String inputKey);
 
     ResponseEntity<?> signUp(SignUpRequestDto signUpRequestDto);
-    SignInResponseDto signIn(SignInRequestDto signInRequestDto);
+    ResponseEntity<?> signIn(SignInRequestDto signInRequestDto);
 }
