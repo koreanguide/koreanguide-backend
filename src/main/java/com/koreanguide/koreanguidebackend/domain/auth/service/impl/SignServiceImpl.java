@@ -265,7 +265,7 @@ public class SignServiceImpl implements SignService {
                     .build());
         }
 
-        if(passwordEncoder.matches(user.get().getPassword(), resetPasswordRequestDto.getPassword())) {
+        if(passwordEncoder.matches(resetPasswordRequestDto.getPassword(), user.get().getPassword())) {
             return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
                             .en("The new password is not different from the current password.")
                             .ko("새로운 비밀번호가 현재 비밀번호와 다르지 않습니다.")
