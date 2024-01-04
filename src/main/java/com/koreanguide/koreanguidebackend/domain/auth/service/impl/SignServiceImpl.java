@@ -1,15 +1,15 @@
 package com.koreanguide.koreanguidebackend.domain.auth.service.impl;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.ResetPasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpRequestDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserRole;
-import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserType;
+import com.koreanguide.koreanguidebackend.domain.auth.data.enums.VerifyType;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -130,8 +129,16 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public boolean validateAuthKey(String email, String inputKey) {
-        String authKey = redisTemplate.opsForValue().get(email + ":validateSignUpEmail");
+    public boolean validateAuthKey(VerifyType verifyType, String email, String inputKey) {
+        String validateType;
+
+        if(verifyType.equals(VerifyType.SIGNUP)) {
+            validateType = ":validateSignUpEmail";
+        } else {
+            validateType = ":validateResetPasswordEmail";
+        }
+
+        String authKey = redisTemplate.opsForValue().get(email + validateType);
         return inputKey.equals(authKey);
     }
 
@@ -159,7 +166,7 @@ public class SignServiceImpl implements SignService {
             );
         }
 
-        if(!validateAuthKey(signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey())) {
+        if(!validateAuthKey(VerifyType.SIGNUP, signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey())) {
             return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(
                     SignAlertResponseDto.builder()
                             .ko("이메일 인증 유효 시간이 만료되었습니다. 이메일 인증을 다시 시도하십시오.")
@@ -234,6 +241,89 @@ public class SignServiceImpl implements SignService {
                         .email(user.get().getEmail())
                         .msg("로그인 성공")
                         .success(true)
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> resetPassword(ResetPasswordRequestDto resetPasswordRequestDto) {
+        if(!matchEmailPattern(resetPasswordRequestDto.getEmail())) {
+            throw new RuntimeException("이메일 형식 입력 오류");
+        }
+
+        if(!validateAuthKey(VerifyType.RESET_PASSWORD, resetPasswordRequestDto.getEmail(),
+                resetPasswordRequestDto.getValidateKey())) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
+        Optional<User> user = userRepository.findByEmail(resetPasswordRequestDto.getEmail());
+
+        if(user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(SignAlertResponseDto.builder()
+                            .ko("입력한 이메일 주소로 등록된 회원을 찾을 수 없습니다. 이메일 주소를 다시 한 번 확인하십시오.")
+                            .en("No registered members could be found with the email address you entered. " +
+                                    "Please double check your email address.")
+                    .build());
+        }
+
+        if(passwordEncoder.matches(user.get().getPassword(), resetPasswordRequestDto.getPassword())) {
+            return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
+                            .en("The new password is not different from the current password.")
+                            .ko("새로운 비밀번호가 현재 비밀번호와 다르지 않습니다.")
+                    .build());
+        }
+
+        User updatedUser = user.get();
+        updatedUser.setPassword(passwordEncoder.encode(resetPasswordRequestDto.getPassword()));
+
+        userRepository.save(updatedUser);
+
+        return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
+                        .ko("비밀번호 변경이 정상적으로 완료되었습니다.")
+                        .en("The password change has been completed successfully.")
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> sendResetPasswordVerifyMail(String to) throws MessagingException {
+        if(!matchEmailPattern(to)) {
+            throw new RuntimeException("이메일 형식 입력 오류");
+        }
+
+        Long expireTime = redisTemplate.getExpire(to + ":validateResetPasswordEmail", TimeUnit.SECONDS);
+        if(expireTime > 0) {
+            long min = expireTime / 60;
+            long sec = expireTime % 60;
+            String timeLeft = String.format("%02d:%02d", min, sec);
+            return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
+                    .en("You can resend the email authentication after " + timeLeft + ".")
+                    .ko(timeLeft + " 후에 이메일 인증 재발송이 가능합니다.")
+                    .build());
+        }
+
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
+
+        mimeMessageHelper.setTo(to);
+        mimeMessageHelper.setSubject("KOREAN GUIDE 비밀번호 재설정 이메일 인증");
+
+        String authKey = generateAuthKey();
+        redisTemplate.opsForValue().set(to + ":validateResetPasswordEmail", authKey);
+        redisTemplate.expire(to + ":validateResetPasswordEmail", 30, TimeUnit.MINUTES);
+
+        redisTemplate.opsForValue().set(to + ":validateResetPasswordEmailResendTime", authKey);
+        redisTemplate.expire(to + ":validateResetPasswordEmailResendTime", 1, TimeUnit.MINUTES);
+
+        Context context = new Context();
+        context.setVariable("key", authKey);
+
+        String html = springTemplateEngine.process("resetPasswordEmail.html", context);
+        mimeMessageHelper.setText(html, true);
+
+        mailSender.send(mimeMessage);
+
+        return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
+                .en("A password reset authentication email has been sent successfully.")
+                .ko("비밀번호 재설정 인증 이메일이 정상적으로 발송되었습니다.")
                 .build());
     }
 }

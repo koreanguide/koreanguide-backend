@@ -1,6 +1,7 @@
 package com.koreanguide.koreanguidebackend.domain.auth.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.ResetPasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.TokenRequestDto;
@@ -8,6 +9,7 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResp
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.TokenResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.enums.VerifyType;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,29 @@ public class SignController {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
+    @PostMapping("/verify/request/pw")
+    public ResponseEntity<?> requestResetPasswordVerifyEmail(@RequestParam String email) throws MessagingException {
+        return signService.sendResetPasswordVerifyMail(email);
+    }
+
+    @PostMapping("/verify/validate/pw")
+    public ResponseEntity<?> validateResetPasswordEmail(@RequestParam String email, String key) {
+        if (signService.validateAuthKey(VerifyType.RESET_PASSWORD, email, key)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    SignAlertResponseDto.builder()
+                            .ko("이메일 인증 번호가 일치하지 않습니다.")
+                            .en("Email authentication number does not match.")
+                            .build());
+        }
+    }
+
+    @PutMapping("/reset/password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequestDto resetPasswordRequestDto) {
+        return signService.resetPassword(resetPasswordRequestDto);
+    }
+
     @PostMapping("/verify/request")
     public ResponseEntity<?> requestEmailAuth(@RequestParam String email) throws MessagingException {
         return signService.sendVerifyMail(email);
@@ -40,7 +65,7 @@ public class SignController {
 
     @PostMapping("/verify/validate")
     public ResponseEntity<?> validateEmail(@RequestParam String email, String authKey) {
-        if (signService.validateAuthKey(email, authKey)) {
+        if (signService.validateAuthKey(VerifyType.SIGNUP, email, authKey)) {
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
@@ -53,7 +78,7 @@ public class SignController {
 
     @PostMapping(value = "/signup")
     public ResponseEntity<?> signUp(@RequestBody SignUpRequestDto signUpRequestDto) {
-        if (!signService.validateAuthKey(signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey())) {
+        if (!signService.validateAuthKey(VerifyType.SIGNUP, signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 

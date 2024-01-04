@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @ToString(callSuper = true)
 @SuperBuilder
-public class SignAlertResponseDto extends BaseResponseDto {
+public class SignAlertResponseDto {
     private String en;
     private String ko;
 }
