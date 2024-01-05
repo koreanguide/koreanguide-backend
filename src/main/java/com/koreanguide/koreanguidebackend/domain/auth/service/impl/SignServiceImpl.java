@@ -86,6 +86,16 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public ResponseEntity<?> sendVerifyMail(String to) throws MessagingException {
+        Optional<User> user = userRepository.findByEmail(to);
+
+        if(user.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(SignAlertResponseDto.builder()
+                            .en("This email address is already registered with the service. " +
+                                    "Please use a different email address or try to sign-in.")
+                            .ko("이미 서비스에 등록된 이메일 주소입니다. 다른 이메일 주소를 사용하거나 로그인을 시도하십시오.")
+                    .build());
+        }
+        
         if(!matchEmailPattern(to)) {
             throw new RuntimeException("이메일 형식 입력 오류");
         }
