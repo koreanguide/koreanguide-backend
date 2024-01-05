@@ -1,16 +1,13 @@
 package com.koreanguide.koreanguidebackend.domain.auth.data.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(callSuper = true)
-@SuperBuilder
+@Builder
 public class SignAlertResponseDto {
     private String en;
     private String ko;
