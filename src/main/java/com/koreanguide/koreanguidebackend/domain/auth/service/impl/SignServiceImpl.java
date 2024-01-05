@@ -90,7 +90,7 @@ public class SignServiceImpl implements SignService {
             throw new RuntimeException("이메일 형식 입력 오류");
         }
         
-        Long expireTime = redisTemplate.getExpire(to + ":validateSignUpEmail", TimeUnit.SECONDS);
+        Long expireTime = redisTemplate.getExpire(to + ":validateSignUpEmailResendTime", TimeUnit.SECONDS);
         if(expireTime > 0) {
             long min = expireTime / 60;
             long sec = expireTime % 60;
@@ -289,7 +289,7 @@ public class SignServiceImpl implements SignService {
             throw new RuntimeException("이메일 형식 입력 오류");
         }
 
-        Long expireTime = redisTemplate.getExpire(to + ":validateResetPasswordEmail", TimeUnit.SECONDS);
+        Long expireTime = redisTemplate.getExpire(to + ":validateResetPasswordEmailResendTime", TimeUnit.SECONDS);
         if(expireTime > 0) {
             long min = expireTime / 60;
             long sec = expireTime % 60;
