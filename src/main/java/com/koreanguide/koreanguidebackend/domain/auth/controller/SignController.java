@@ -1,10 +1,7 @@
 package com.koreanguide.koreanguidebackend.domain.auth.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.ResetPasswordRequestDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpRequestDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.TokenRequestDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.*;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
@@ -36,13 +33,13 @@ public class SignController {
     }
 
     @PostMapping("/verify/request/pw")
-    public ResponseEntity<?> requestResetPasswordVerifyEmail(@RequestParam String email) throws MessagingException {
-        return signService.sendResetPasswordVerifyMail(email);
+    public ResponseEntity<?> requestResetPasswordVerifyEmail(@RequestBody ValidateEmailRequestDto validateEmailRequestDto) throws MessagingException {
+        return signService.sendResetPasswordVerifyMail(validateEmailRequestDto.getEmail());
     }
 
     @PostMapping("/verify/validate/pw")
-    public ResponseEntity<?> validateResetPasswordEmail(@RequestParam String email, String key) {
-        if (signService.validateAuthKey(VerifyType.RESET_PASSWORD, email, key)) {
+    public ResponseEntity<?> validateResetPasswordEmail(@RequestBody ValidateRequestDto validateRequestDto) {
+        if (signService.validateAuthKey(VerifyType.RESET_PASSWORD, validateRequestDto.getEmail(), validateRequestDto.getKey())) {
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
@@ -59,13 +56,13 @@ public class SignController {
     }
 
     @PostMapping("/verify/request")
-    public ResponseEntity<?> requestEmailAuth(@RequestParam String email) throws MessagingException {
-        return signService.sendVerifyMail(email);
+    public ResponseEntity<?> requestEmailAuth(@RequestBody ValidateEmailRequestDto validateEmailRequestDto) throws MessagingException {
+        return signService.sendVerifyMail(validateEmailRequestDto.getEmail());
     }
 
     @PostMapping("/verify/validate")
-    public ResponseEntity<?> validateEmail(@RequestParam String email, String authKey) {
-        if (signService.validateAuthKey(VerifyType.SIGNUP, email, authKey)) {
+    public ResponseEntity<?> validateEmail(@RequestBody ValidateRequestDto validateRequestDto) {
+        if (signService.validateAuthKey(VerifyType.SIGNUP, validateRequestDto.getEmail(), validateRequestDto.getKey())) {
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(

@@ -95,7 +95,7 @@ public class SignServiceImpl implements SignService {
                             .ko("이미 서비스에 등록된 이메일 주소입니다. 다른 이메일 주소를 사용하거나 로그인을 시도하십시오.")
                     .build());
         }
-        
+
         if(!matchEmailPattern(to)) {
             throw new RuntimeException("이메일 형식 입력 오류");
         }
