@@ -265,6 +265,18 @@ public class SignServiceImpl implements SignService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
+        String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
+
+        if(!passwordPattern.matches(passwordPattern)) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(SignAlertResponseDto.builder()
+                            .en("Password cannot be used. Configure your password with at least 8 " +
+                                    "English characters, at least 1 special character, at least 1 " +
+                                    "uppercase character, and at least 1 character number.")
+                            .ko("사용할 수 없는 비밀번호입니다. 영문 8자리 이상, 1개 이상의 특수문자, 1자 이상의 대문자, " +
+                                    "1자 이상의 숫자를 이용하여 비밀번호를 구성하십시오.")
+                    .build());
+        }
+
         Optional<User> user = userRepository.findByEmail(resetPasswordRequestDto.getEmail());
 
         if(user.isEmpty()) {
