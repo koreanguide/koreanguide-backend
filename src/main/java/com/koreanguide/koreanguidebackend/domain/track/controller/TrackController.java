@@ -46,7 +46,7 @@ public class TrackController {
     @PostMapping("/")
     public ResponseEntity<BaseResponseDto> applyTrack(HttpServletRequest request,
                                                       @RequestBody TrackApplyRequestDto trackApplyRequestDto) {
-        return trackService.applyTrack(jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTh-TOKEN")),
+        return trackService.applyTrack(jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")),
                 trackApplyRequestDto);
     }
 

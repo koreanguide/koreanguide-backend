@@ -1,6 +1,5 @@
 package com.koreanguide.koreanguidebackend.domain.track.data.entity;
 
-import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import lombok.*;
 
 import javax.persistence.*;
@@ -23,10 +22,6 @@ public class TrackTag {
 
     @Column(nullable = false)
     private LocalDateTime uploadedDt;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
 
     @ManyToOne
     @JoinColumn(name = "track_id")

@@ -14,6 +14,7 @@ import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackImag
 import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackRepository;
 import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackTagRepository;
 import com.koreanguide.koreanguidebackend.domain.track.service.TrackService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.Random;
 
 @Service
+@Slf4j
 public class TrackServiceImpl implements TrackService {
     private final TrackRepository trackRepository;
     private final UserRepository userRepository;
@@ -75,8 +77,8 @@ public class TrackServiceImpl implements TrackService {
         List<Track> trackList = trackRepository.getAllByUser(user.get());
 
         for(Track track : trackList) {
-            List<TrackImage> trackImageList = trackImageRepository.findAllByUser(user.get());
-            List<TrackTag> trackTagList = trackTagRepository.findAllByUser(user.get());
+            List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
+            List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
             trackResponseDtoList.add(TrackResponseDto.builder()
                             .trackTitle(track.getTrackTitle())
                             .trackPreview(track.getTrackPreview())
@@ -150,54 +152,72 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     public ResponseEntity<BaseResponseDto> applyTrack(Long userId, TrackApplyRequestDto trackApplyRequestDto) {
+        log.info("TrackServiceImpl - applyTrack: 트랙 저장 프로세스 시작 및 시도");
+
+        log.info("TrackServiceImpl - applyTrack: 사용자 조회");
         Optional<User> user = userRepository.findById(userId);
         LocalDateTime CURRENT_TIME = LocalDateTime.now();
 
         if(user.isEmpty()) {
+            log.error("TrackServiceImpl - applyTrack: 사용자 조회 실패");
             throw new RuntimeException("사용자를 찾을 수 없음");
         }
 
-        Track track = new Track();
+        log.info("TrackServiceImpl - applyTrack: 사용자 조회 성공");
 
-        track.setAgreePublicTerms(trackApplyRequestDto.isAgreePublicTerms());
-        track.setAgreePublicTermsDt(CURRENT_TIME);
-        track.setAgreeTerms(trackApplyRequestDto.isAgreeTerms());
-        track.setAgreeTermsDt(CURRENT_TIME);
-        track.setAgreePrivacyPolicy(trackApplyRequestDto.isAgreePrivacyPolicy());
-        track.setAgreePrivacyPolicyDt(CURRENT_TIME);
-        track.setTrackTitle(trackApplyRequestDto.getTrackTitle());
-        track.setTrackContent(trackApplyRequestDto.getTrackPreview());
-        track.setTrackPreview(trackApplyRequestDto.getTrackPreview());
-        track.setPrimaryImageUrl(trackApplyRequestDto.getPrimaryImageUrl());
-        track.setStar(false);
-        track.setUser(user.get());
-        track.setVisible(trackApplyRequestDto.isVisible());
-        track.setUseAble(true);
-        track.setCreatedAt(CURRENT_TIME);
-        track.setUpdatedAt(CURRENT_TIME);
-        track.setBlocked(false);
+        log.info("TrackServiceImpl - applyTrack: 트랙 객체 생성");
+        Track track = Track.builder()
+                .agreePublicTerms(trackApplyRequestDto.isAgreePublicTerms())
+                .agreePublicTermsDt(CURRENT_TIME)
+                .agreeTerms(trackApplyRequestDto.isAgreeTerms())
+                .agreeTermsDt(CURRENT_TIME)
+                .agreePrivacyPolicy(trackApplyRequestDto.isAgreePrivacyPolicy())
+                .agreePrivacyPolicyDt(CURRENT_TIME)
+                .trackTitle(trackApplyRequestDto.getTrackTitle())
+                .trackContent(trackApplyRequestDto.getTrackContent())
+                .trackPreview(trackApplyRequestDto.getTrackPreview())
+                .primaryImageUrl(trackApplyRequestDto.getPrimaryImageUrl())
+                .star(false)
+                .user(user.get())
+                .visible(true)
+                .useAble(true)
+                .blocked(false)
+                .createdAt(CURRENT_TIME)
+                .updatedAt(CURRENT_TIME)
+                .build();
 
+        log.info("TrackServiceImpl - applyTrack: 트랙 저장 시도");
         trackRepository.save(track);
+        log.info("TrackServiceImpl - applyTrack: 트랙 저장 성공");
 
-        for(TrackTagApplyRequestDto trackTagApplyRequestDto : trackApplyRequestDto.getTrackTagApplyRequestDtoList()) {
+        log.info("TrackServiceImpl - applyTrack: 태그 저장 시작");
+        for(TrackTagApplyRequestDto trackTagApplyRequestDto : trackApplyRequestDto.getTags()) {
+            log.info("TrackServiceImpl - applyTrack: 태그 객체 생성");
             TrackTag trackTag = TrackTag.builder()
                     .track(track)
                     .tagName(trackTagApplyRequestDto.getTagName())
                     .uploadedDt(CURRENT_TIME)
                     .build();
+            log.info("TrackServiceImpl - applyTrack: 태그 저장 시도");
             trackTagRepository.save(trackTag);
+            log.info("TrackServiceImpl - applyTrack: 태그 저장 완료");
         }
 
-        for(TrackImageApplyRequestDto trackImageApplyRequestDto : trackApplyRequestDto.getTrackImageApplyRequestDtoList()) {
+        log.info("TrackServiceImpl - applyTrack: 이미지 저장 시작");
+        for(TrackImageApplyRequestDto trackImageApplyRequestDto : trackApplyRequestDto.getImages()) {
+            log.info("TrackServiceImpl - applyTrack: 이미지 객체 생성");
             TrackImage trackImage = TrackImage.builder()
                     .imageUrl(trackImageApplyRequestDto.getImageUrl())
                     .useAble(true)
                     .uploadedDt(CURRENT_TIME)
                     .track(track)
                     .build();
+            log.info("TrackServiceImpl - applyTrack: 이미지 저장 시도");
             trackImageRepository.save(trackImage);
+            log.info("TrackServiceImpl - applyTrack: 이미지 저장 완료");
         }
 
+        log.info("TrackServiceImpl - applyTrack: 트랙 저장 프로세스 완료");
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
                         .success(true)
                         .msg("트랙 생성이 완료되었습니다.")

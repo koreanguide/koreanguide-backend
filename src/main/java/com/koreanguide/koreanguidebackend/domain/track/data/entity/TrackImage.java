@@ -1,10 +1,6 @@
 package com.koreanguide.koreanguidebackend.domain.track.data.entity;
 
-import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
@@ -31,10 +27,6 @@ public class TrackImage {
 
     @Column
     private LocalDateTime disableDt;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
 
     @ManyToOne
     @JoinColumn(name = "track_id")

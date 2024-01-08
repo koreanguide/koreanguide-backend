@@ -21,9 +21,8 @@ public class TrackApplyRequestDto {
     private boolean agreePrivacyPolicy;
     private String trackTitle;
     private String trackPreview;
+    private String trackContent;
     private String primaryImageUrl;
-    private List<TrackImageApplyRequestDto> trackImageApplyRequestDtoList;
-    private List<TrackTagApplyRequestDto> trackTagApplyRequestDtoList;
-//    private User user;
-    private boolean visible;
+    private List<TrackImageApplyRequestDto> images;
+    private List<TrackTagApplyRequestDto> tags;
 }
