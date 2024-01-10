@@ -6,7 +6,9 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserReposi
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackImageApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackTagApplyRequestDto;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackImageResponseDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackResponseDto;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackTagResponseDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackImage;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackTag;
@@ -45,15 +47,57 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     public ResponseEntity<?> getRandomTrack() {
+        log.info("TrackServiceImpl - getRandomTrack: 모든 트랙 조회 시도");
         List<Track> trackList = trackRepository.findAll();
-        int randomIndex = new Random().nextInt(trackList.size());
-        Track track = trackList.get(randomIndex);
+        log.info("TrackServiceImpl - getRandomTrack: 모든 트랙 조회 완료");
+        List<Track> enableTrackList = new ArrayList<>();
+
+        log.info("TrackServiceImpl - getRandomTrack: 유효 트랙 구분 프로세스 시작");
+        for(Track track : trackList) {
+//            Public 상태와 동시에 차단 상태가 아닌 트랙
+            if(track.isVisible() && !track.isBlocked()) {
+                enableTrackList.add(track);
+            }
+        }
+        log.info("TrackServiceImpl - getRandomTrack: 유효 트랙 구분 프로세스 완료");
+
+        int randomIndex = new Random().nextInt(enableTrackList.size());
+        log.info("TrackServiceImpl - getRandomTrack: 랜덤 트랙 선정 및 조회 시도");
+        Track track = enableTrackList.get(randomIndex);
+        log.info("TrackServiceImpl - getRandomTrack: 랜덤 트랙 선정 및 조회 완료");
+
+        log.info("TrackServiceImpl - getRandomTrack: 해당 트랙의 전체 이미지 조회 시도");
+        List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
+        List<TrackImageResponseDto> trackImageResponseDtoList = new ArrayList<>();
+        log.info("TrackServiceImpl - getRandomTrack: 해당 트랙의 전체 이미지 조회 완료");
+
+        for(TrackImage trackImage : trackImageList) {
+            trackImageResponseDtoList.add(TrackImageResponseDto.builder()
+                            .url(trackImage.getImageUrl())
+                    .build());
+        }
+
+        log.info("TrackServiceImpl - getRandomTrack: 해당 트랙의 전체 태그 조회 시도");
+        List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
+        List<TrackTagResponseDto> trackTagResponseDtoList = new ArrayList<>();
+        log.info("TrackServiceImpl - getRandomTrack: 해당 트랙의 전체 태그 조회 완료");
+
+        for(TrackTag trackTag : trackTagList) {
+            trackTagResponseDtoList.add(TrackTagResponseDto.builder()
+                            .tag(trackTag.getTagName())
+                    .build());
+        }
+
         TrackResponseDto trackResponseDto = TrackResponseDto.builder()
+                .baseResponseDto(BaseResponseDto.builder()
+                        .success(true)
+                        .msg("처리 완료")
+                        .build())
                 .trackTitle(track.getTrackTitle())
                 .trackPreview(track.getTrackPreview())
                 .primaryImageUrl(track.getPrimaryImageUrl())
-//                .images(track.getTrackImages())
-//                .tags(track.getTrackTags())
+                .images(trackImageResponseDtoList)
+                .tags(trackTagResponseDtoList)
                 .name(track.getUser().getNickname())
                 .email(track.getUser().getEmail())
                 .visible(track.isVisible())
@@ -78,13 +122,33 @@ public class TrackServiceImpl implements TrackService {
 
         for(Track track : trackList) {
             List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
+            List<TrackImageResponseDto> trackImageResponseDtoList = new ArrayList<>();
+
+            for(TrackImage trackImage : trackImageList) {
+                trackImageResponseDtoList.add(TrackImageResponseDto.builder()
+                        .url(trackImage.getImageUrl())
+                        .build());
+            }
+
             List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
+            List<TrackTagResponseDto> trackTagResponseDtoList = new ArrayList<>();
+
+            for(TrackTag trackTag : trackTagList) {
+                trackTagResponseDtoList.add(TrackTagResponseDto.builder()
+                                .tag(trackTag.getTagName())
+                        .build());
+            }
+
             trackResponseDtoList.add(TrackResponseDto.builder()
+                            .baseResponseDto(BaseResponseDto.builder()
+                                    .success(true)
+                                    .msg("처리 완료")
+                                    .build())
                             .trackTitle(track.getTrackTitle())
                             .trackPreview(track.getTrackPreview())
                             .primaryImageUrl(track.getPrimaryImageUrl())
-                            .images(trackImageList)
-                            .tags(trackTagList)
+                            .images(trackImageResponseDtoList)
+                            .tags(trackTagResponseDtoList)
                             .name(track.getUser().getNickname())
                             .email(track.getUser().getEmail())
                             .visible(track.isVisible())

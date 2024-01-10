@@ -22,8 +22,8 @@ public class TrackResponseDto {
     private String trackTitle;
     private String trackPreview;
     private String primaryImageUrl;
-    private List<TrackImage> images;
-    private List<TrackTag> tags;
+    private List<TrackImageResponseDto> images;
+    private List<TrackTagResponseDto> tags;
     private String name;
     private String email;
     private boolean visible;
