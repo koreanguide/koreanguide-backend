@@ -3,6 +3,7 @@ package com.koreanguide.koreanguidebackend.domain.track.service.Impl;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.ChangeTrackNameRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackImageApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackTagApplyRequestDto;
@@ -286,6 +287,32 @@ public class TrackServiceImpl implements TrackService {
                         .success(true)
                         .msg("트랙 생성이 완료되었습니다.")
                 .build());
+    }
+
+    @Override
+    public ResponseEntity<?> changeTrackName(Long userId, ChangeTrackNameRequestDto changeTrackNameRequestDto) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            throw new RuntimeException("사용자를 찾을 수 없음");
+        }
+
+        Optional<Track> track = trackRepository.findById(changeTrackNameRequestDto.getTrackId());
+
+        if(track.isEmpty()) {
+            throw new RuntimeException("트랙을 찾을 수 없음");
+        }
+
+        if(!track.get().getUser().equals(user.get())) {
+            throw new RuntimeException("트랙 생성자 미일치");
+        }
+
+        Track updatedTrack = track.get();
+        updatedTrack.setTrackTitle(changeTrackNameRequestDto.getNewName());
+
+        trackRepository.save(updatedTrack);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
