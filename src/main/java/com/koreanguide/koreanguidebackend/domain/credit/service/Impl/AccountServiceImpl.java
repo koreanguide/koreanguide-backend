@@ -136,13 +136,10 @@ public class AccountServiceImpl implements AccountService {
                     .appliedAt(LocalDateTime.now())
                     .build());
         } else {
-            BankAccounts foundBankAccounts = bankAccounts.get();
-            foundBankAccounts.setAccountProvider(bankAccountApplyRequestDto.getBankAccountProvider());
-            foundBankAccounts.setAccountHolderName(bankAccountApplyRequestDto.getName());
-            foundBankAccounts.setAccountNumber(bankAccountApplyRequestDto.getBankAccountNumber());
-            foundBankAccounts.setAppliedAt(LocalDateTime.now());
-
-            bankAccountsRepository.save(foundBankAccounts);
+            return ResponseEntity.status(HttpStatus.LOCKED).body(BaseResponseDto.builder()
+                            .success(false)
+                            .msg("계좌는 사용자 당 하나만 등록이 가능합니다.")
+                    .build());
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()

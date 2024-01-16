@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,11 +114,16 @@ public class CreditServiceImpl implements CreditService {
             List<CreditLog> creditLogList = creditLogRepository.findAllByCredit(credit.get());
 
             for(CreditLog creditLog : creditLogList) {
+                NumberFormat formatter = NumberFormat.getNumberInstance();
                 creditHistoryResponseDtoList.add(CreditHistoryResponseDto.builder()
                                 .content(getDetailContent(creditLog.getTransactionContent()))
                                 .transactionType(getTransactionType(creditLog.getTransactionType()))
                                 .date(creditLog.getDate())
-                                .amount(creditLog.getAmount())
+                                .amount(
+                                        creditLog.getTransactionType().equals(TransactionType.WITHDRAW) ?
+                                                "-" + formatter.format(creditLog.getAmount()) :
+                                                "+" + formatter.format(creditLog.getAmount())
+                                )
                         .build());
             }
 

@@ -2,14 +2,15 @@ package com.koreanguide.koreanguidebackend.domain.track.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.ChangeTrackNameRequestDto;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.ChangeTrackTagRequestDto;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.ChangeTrackValueRequestDto;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.RemoveTrackRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackResponseDto;
 import com.koreanguide.koreanguidebackend.domain.track.service.TrackService;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -59,6 +60,16 @@ public class TrackController {
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
     })
+    @DeleteMapping
+    public ResponseEntity<?> removeTrack(HttpServletRequest request,
+                                         @RequestBody RemoveTrackRequestDto removeTrackRequestDto) {
+        return trackService.removeTrack(GET_USER_ID_BY_TOKEN(request), removeTrackRequestDto);
+    }
+
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
     @GetMapping("/")
     public ResponseEntity<TrackResponseDto> getTrackById(HttpServletRequest request, @RequestParam Long trackId) {
         return trackService.getTrackById(GET_USER_ID_BY_TOKEN(request), trackId);
@@ -70,8 +81,38 @@ public class TrackController {
     })
     @PutMapping("/name")
     public ResponseEntity<?> changeTrackName(HttpServletRequest request,
-                                             @RequestBody ChangeTrackNameRequestDto changeTrackNameRequestDto) {
-        return trackService.changeTrackName(GET_USER_ID_BY_TOKEN(request), changeTrackNameRequestDto);
+                                             @RequestBody ChangeTrackValueRequestDto changeTrackValueRequestDto) {
+        return trackService.changeTrackName(GET_USER_ID_BY_TOKEN(request), changeTrackValueRequestDto);
+    }
+
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    @PutMapping("/preview")
+    public ResponseEntity<?> changeTrackPreview(HttpServletRequest request,
+                                                @RequestBody ChangeTrackValueRequestDto changeTrackValueRequestDto) {
+        return trackService.changeTrackPreview(GET_USER_ID_BY_TOKEN(request), changeTrackValueRequestDto);
+    }
+
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    @PutMapping("/content")
+    public ResponseEntity<?> changeTrackContent(HttpServletRequest request,
+                                                @RequestBody ChangeTrackValueRequestDto changeTrackValueRequestDto) {
+        return trackService.changeTrackContent(GET_USER_ID_BY_TOKEN(request), changeTrackValueRequestDto);
+    }
+
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    @PutMapping("/tags")
+    public ResponseEntity<?> changeTrackTags(HttpServletRequest request,
+                                             @RequestBody ChangeTrackTagRequestDto changeTrackTagRequestDto) {
+        return trackService.changeTrackTag(GET_USER_ID_BY_TOKEN(request), changeTrackTagRequestDto);
     }
 
     @ApiImplicitParams({

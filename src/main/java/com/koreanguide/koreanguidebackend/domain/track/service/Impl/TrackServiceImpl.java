@@ -3,13 +3,8 @@ package com.koreanguide.koreanguidebackend.domain.track.service.Impl;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.ChangeTrackNameRequestDto;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackApplyRequestDto;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackImageApplyRequestDto;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackTagApplyRequestDto;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackImageResponseDto;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackResponseDto;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.TrackTagResponseDto;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.*;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.*;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackImage;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackTag;
@@ -44,6 +39,43 @@ public class TrackServiceImpl implements TrackService {
         this.userRepository = userRepository;
         this.trackImageRepository = trackImageRepository;
         this.trackTagRepository = trackTagRepository;
+    }
+
+    public TrackInfoResponseDto GET_TRACK(User user, Long trackId) {
+        Optional<Track> track = trackRepository.findById(trackId);
+        TrackInfoResponseDto trackInfoResponseDto = new TrackInfoResponseDto();
+
+        if(track.isEmpty()) {
+            throw new RuntimeException("트랙을 찾을 수 없음");
+        }
+
+        if(track.get().isBlocked()) {
+            trackInfoResponseDto.setUseAble(false);
+        } else {
+            trackInfoResponseDto.setVisible(true);
+        }
+
+        trackInfoResponseDto.setAdmin(track.get().getUser().equals(user));
+        trackInfoResponseDto.setVisible(track.get().isVisible());
+        trackInfoResponseDto.setTrack(track.get());
+
+        return trackInfoResponseDto;
+    }
+
+    public User GET_VALID_USER(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            throw new RuntimeException("사용자를 찾을 수 없음");
+        } else if(!user.get().isEnabled()) {
+            throw new RuntimeException("활성 사용자가 아님");
+        }
+
+        return user.get();
+    }
+
+    public boolean VALIDATE_USER_OWN_TRACK(User user, Track track) {
+        return track.getUser().equals(user);
     }
 
     @Override
@@ -112,14 +144,10 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     public ResponseEntity<?> getAllTrackByUser(Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-
-        if(user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("사용자를 찾을 수 없음");
-        }
+        User user = GET_VALID_USER(userId);
 
         List<TrackResponseDto> trackResponseDtoList = new ArrayList<>();
-        List<Track> trackList = trackRepository.getAllByUser(user.get());
+        List<Track> trackList = trackRepository.getAllByUser(user);
 
         for(Track track : trackList) {
             List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
@@ -165,18 +193,9 @@ public class TrackServiceImpl implements TrackService {
     @Override
     public ResponseEntity<TrackResponseDto> getTrackById(Long userId, Long trackId) {
         Track track = trackRepository.getById(trackId);
-        Optional<User> user = userRepository.findById(userId);
+        User user = GET_VALID_USER(userId);
 
-        if(user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.OK).body(TrackResponseDto.builder()
-                            .baseResponseDto(BaseResponseDto.builder()
-                                    .success(false)
-                                    .msg("사용자 정보를 확인할 수 없습니다.")
-                                    .build())
-                    .build());
-        }
-
-        if(!track.isVisible() && !track.getUser().equals(user.get())) {
+        if(!track.isVisible() && !VALIDATE_USER_OWN_TRACK(user, track)) {
             return ResponseEntity.status(HttpStatus.OK).body(TrackResponseDto.builder()
                             .baseResponseDto(BaseResponseDto.builder()
                                     .success(false)
@@ -185,7 +204,7 @@ public class TrackServiceImpl implements TrackService {
                     .build());
         }
 
-        if(track.isBlocked() && !track.getUser().equals(user.get())) {
+        if(track.isBlocked() && !VALIDATE_USER_OWN_TRACK(user, track)) {
             return ResponseEntity.status(HttpStatus.OK).body(TrackResponseDto.builder()
                             .baseResponseDto(BaseResponseDto.builder()
                                     .success(false)
@@ -219,14 +238,8 @@ public class TrackServiceImpl implements TrackService {
     public ResponseEntity<BaseResponseDto> applyTrack(Long userId, TrackApplyRequestDto trackApplyRequestDto) {
         log.info("TrackServiceImpl - applyTrack: 트랙 저장 프로세스 시작 및 시도");
 
-        log.info("TrackServiceImpl - applyTrack: 사용자 조회");
-        Optional<User> user = userRepository.findById(userId);
+        User user = GET_VALID_USER(userId);
         LocalDateTime CURRENT_TIME = LocalDateTime.now();
-
-        if(user.isEmpty()) {
-            log.error("TrackServiceImpl - applyTrack: 사용자 조회 실패");
-            throw new RuntimeException("사용자를 찾을 수 없음");
-        }
 
         log.info("TrackServiceImpl - applyTrack: 사용자 조회 성공");
 
@@ -243,7 +256,7 @@ public class TrackServiceImpl implements TrackService {
                 .trackPreview(trackApplyRequestDto.getTrackPreview())
                 .primaryImageUrl(trackApplyRequestDto.getPrimaryImageUrl())
                 .star(false)
-                .user(user.get())
+                .user(user)
                 .visible(true)
                 .useAble(true)
                 .blocked(false)
@@ -290,29 +303,102 @@ public class TrackServiceImpl implements TrackService {
     }
 
     @Override
-    public ResponseEntity<?> changeTrackName(Long userId, ChangeTrackNameRequestDto changeTrackNameRequestDto) {
-        Optional<User> user = userRepository.findById(userId);
+    public ResponseEntity<?> changeTrackName(Long userId, ChangeTrackValueRequestDto changeTrackValueRequestDto) {
+        User user = GET_VALID_USER(userId);
+        TrackInfoResponseDto trackInfoResponseDto = GET_TRACK(user, changeTrackValueRequestDto.getTrackId());
 
-        if(user.isEmpty()) {
-            throw new RuntimeException("사용자를 찾을 수 없음");
-        }
-
-        Optional<Track> track = trackRepository.findById(changeTrackNameRequestDto.getTrackId());
-
-        if(track.isEmpty()) {
-            throw new RuntimeException("트랙을 찾을 수 없음");
-        }
-
-        if(!track.get().getUser().equals(user.get())) {
+        if(!trackInfoResponseDto.isAdmin()) {
             throw new RuntimeException("트랙 생성자 미일치");
         }
 
-        Track updatedTrack = track.get();
-        updatedTrack.setTrackTitle(changeTrackNameRequestDto.getNewName());
+        Track updatedTrack = trackInfoResponseDto.getTrack();
+        updatedTrack.setTrackTitle(changeTrackValueRequestDto.getChangeValue());
 
         trackRepository.save(updatedTrack);
 
         return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> changeTrackPreview(Long userId, ChangeTrackValueRequestDto changeTrackValueRequestDto) {
+        User user = GET_VALID_USER(userId);
+        TrackInfoResponseDto trackInfoResponseDto = GET_TRACK(user, changeTrackValueRequestDto.getTrackId());
+
+        if(!trackInfoResponseDto.isAdmin()) {
+            throw new RuntimeException("트랙 생성자 미일치");
+        }
+
+        Track updatedTrack = trackInfoResponseDto.getTrack();
+        updatedTrack.setTrackPreview(changeTrackValueRequestDto.getChangeValue());
+        trackRepository.save(updatedTrack);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> changeTrackContent(Long userId, ChangeTrackValueRequestDto changeTrackValueRequestDto) {
+        User user = GET_VALID_USER(userId);
+        TrackInfoResponseDto trackInfoResponseDto = GET_TRACK(user, changeTrackValueRequestDto.getTrackId());
+
+        if(!trackInfoResponseDto.isAdmin()) {
+            throw new RuntimeException("트랙 생성자 미일치");
+        }
+
+        Track updatedTrack = trackInfoResponseDto.getTrack();
+        updatedTrack.setTrackContent(changeTrackValueRequestDto.getChangeValue());
+        trackRepository.save(updatedTrack);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> changeTrackTag(Long userId, ChangeTrackTagRequestDto changeTrackTagRequestDto) {
+        User user = GET_VALID_USER(userId);
+        TrackInfoResponseDto trackInfoResponseDto = GET_TRACK(user, changeTrackTagRequestDto.getTrackId());
+
+        if(!trackInfoResponseDto.isAdmin()) {
+            throw new RuntimeException("트랙 생성자 미일치");
+        }
+
+        if(changeTrackTagRequestDto.getTrackTagApplyRequestDtoList().size() < 3) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(TrackAlertResponseDto.builder()
+                            .ko("태그는 최소 3개 이상 추가해야 합니다.")
+                            .en("You must add at least three tags.")
+                    .build());
+        }
+
+        List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(trackInfoResponseDto.getTrack());
+        trackTagRepository.deleteAll(trackTagList);
+
+        LocalDateTime CURRENT_TIME = LocalDateTime.now();
+
+        for(TrackTagApplyRequestDto trackTagApplyRequestDto : changeTrackTagRequestDto.getTrackTagApplyRequestDtoList()) {
+            trackTagRepository.save(TrackTag.builder()
+                            .tagName(trackTagApplyRequestDto.getTagName())
+                            .uploadedDt(CURRENT_TIME)
+                            .track(trackInfoResponseDto.getTrack())
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> removeTrack(Long userId, RemoveTrackRequestDto removeTrackRequestDto) {
+        User user = GET_VALID_USER(userId);
+        TrackInfoResponseDto trackInfoResponseDto = GET_TRACK(user, removeTrackRequestDto.getTrackId());
+
+
+
+        Track updatedTrack = trackInfoResponseDto.getTrack();
+        updatedTrack.setVisible(false);
+
+        trackRepository.save(updatedTrack);
+
+        return ResponseEntity.status(HttpStatus.OK).body(TrackAlertResponseDto.builder()
+                        .ko("트랙이 성공적으로 삭제되었습니다. 삭제한 트랙은 복구할 수 없습니다.")
+                        .en("The track has been successfully deleted. Deleted tracks cannot be recovered.")
+                .build());
     }
 
     @Override

@@ -13,7 +13,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class CreditHistoryResponseDto {
-    private Long amount;
+//    private Long amount;
+    private String amount;
     private String content;
     private LocalDateTime date;
     private String transactionType;
