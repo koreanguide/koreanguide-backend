@@ -4,6 +4,7 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.review.data.dto.request.ReviewCommentRequestDto;
 import com.koreanguide.koreanguidebackend.domain.review.data.dto.request.ReviewRequestDto;
+import com.koreanguide.koreanguidebackend.domain.review.data.dto.response.RecentReviewResponseDto;
 import com.koreanguide.koreanguidebackend.domain.review.data.dto.response.ReviewResponseDto;
 import com.koreanguide.koreanguidebackend.domain.review.data.entity.Review;
 import com.koreanguide.koreanguidebackend.domain.review.data.repository.ReviewRepository;
@@ -17,8 +18,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ReviewServiceImpl implements ReviewService {
@@ -37,6 +40,49 @@ public class ReviewServiceImpl implements ReviewService {
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
         this.trackRepository = trackRepository;
+    }
+
+    @Override
+    public ResponseEntity<?> getRecentReview(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(USER_NOT_FOUND);
+        }
+
+        List<Track> track = trackRepository.getAllByUser(user.get());
+
+        if(track.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        List<Review> reviewList = new ArrayList<>();
+
+        for(Track temp : track) {
+            List<Review> foundReviewViaTrack = reviewRepository.getAllByTrack(temp);
+            reviewList.addAll(foundReviewViaTrack);
+        }
+
+        if(reviewList.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        List<Review> sortedReviewList = reviewList.stream()
+                .sorted(Comparator.comparing(Review::getCreatedAt).reversed())
+                .limit(2)
+                .collect(Collectors.toList());
+
+        List<RecentReviewResponseDto> recentReviewResponseDtoList = new ArrayList<>();
+
+        for (Review review : sortedReviewList) {
+            recentReviewResponseDtoList.add(RecentReviewResponseDto.builder()
+                            .reviewContent(review.getContent())
+                            .reviewUserName(review.getUser().getNickname())
+                            .star(review.getStar())
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(recentReviewResponseDtoList);
     }
 
     @Override

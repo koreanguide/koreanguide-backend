@@ -5,6 +5,8 @@ import com.koreanguide.koreanguidebackend.domain.review.data.dto.request.ReviewR
 import org.springframework.http.ResponseEntity;
 
 public interface ReviewService {
+    ResponseEntity<?> getRecentReview(Long userId);
+
     ResponseEntity<?> getAllReview(Long userId);
 
     ResponseEntity<?> getReview(Long trackId);

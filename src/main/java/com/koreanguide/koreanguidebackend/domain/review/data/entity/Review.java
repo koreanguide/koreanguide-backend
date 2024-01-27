@@ -41,4 +41,7 @@ public class Review {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column
+    private double star;
 }
