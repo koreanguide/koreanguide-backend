@@ -4,6 +4,7 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResp
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.BankAccountApplyRequestDto;
+import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.BankAccountResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditReturningRequestResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.BankAccounts;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
@@ -113,6 +114,27 @@ public class AccountServiceImpl implements AccountService {
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(returningHistoryList);
+    }
+
+    @Override
+    public ResponseEntity<?> getBankAccount(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            throw new RuntimeException("사용자를 찾을 수 없음");
+        }
+
+        Optional<BankAccounts> bankAccounts = bankAccountsRepository.findBankAccountsByUser(user.get());
+
+        if(bankAccounts.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(BankAccountResponseDto.builder()
+                        .accountHolderName(bankAccounts.get().getAccountHolderName())
+                        .accountNumber(bankAccounts.get().getAccountNumber())
+                        .accountProvider(bankAccounts.get().getAccountProvider())
+                .build());
     }
 
     @Override
