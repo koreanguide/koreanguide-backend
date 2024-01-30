@@ -12,6 +12,8 @@ public interface AccountService {
 
     ResponseEntity<List<CreditReturningRequestResponseDto>> getReturningHistory(Long userId);
 
+    ResponseEntity<?> getRecentReturningDay(Long userId);
+
     ResponseEntity<?> getBankAccount(Long userId);
 
     ResponseEntity<BaseResponseDto> applyBankAccount(Long userId,

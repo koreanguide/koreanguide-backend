@@ -58,6 +58,16 @@ public class CreditController {
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
     })
+    @GetMapping("/refund/recent")
+    public ResponseEntity<?> getRecentReturningDay(HttpServletRequest request) {
+        return accountService.getRecentReturningDay(
+                jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
+    }
+
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
     @PostMapping("/bank")
     public ResponseEntity<BaseResponseDto> applyBankAccount(
             HttpServletRequest request,

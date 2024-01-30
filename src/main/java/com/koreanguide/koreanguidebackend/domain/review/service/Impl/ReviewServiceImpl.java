@@ -107,8 +107,8 @@ public class ReviewServiceImpl implements ReviewService {
                         .reviewUserName(review.getUser().getNickname())
                         .reviewUserRegion(review.getUser().getState().toString())
                         .reviewContent(review.getContent())
-                        .comment(!review.getComment().isEmpty())
-                        .reviewCommentContent(review.getComment())
+                        .comment(review.getComment().isEmpty())
+                        .reviewCommentContent(review.getComment().isEmpty() ? null : review.getComment())
                         .build());
             }
         }

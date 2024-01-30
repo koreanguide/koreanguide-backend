@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -67,12 +68,24 @@ public class AccountServiceImpl implements AccountService {
                             .msg("크레딧 잔액 부족")
                     .build());
         } else {
+            List<CreditReturningRequest> creditReturningRequestList = creditReturningRequestRepository.getAllByUser(user.get());
+
+            for(CreditReturningRequest creditReturningRequest : creditReturningRequestList) {
+                if(creditReturningRequest.getReturningStatus().equals(ReturningStatus.PENDING)) {
+                    return ResponseEntity.status(HttpStatus.LOCKED).body(BaseResponseDto.builder()
+                                    .success(false)
+                                    .msg("진행 중인 환급 요청이 존재합니다. 환급 요청이 모두 완료된 후 신청해야 합니다.")
+                            .build());
+                }
+            }
+
             credit.setAmount(credit.getAmount() - amount);
             creditRepository.save(credit);
 
             creditLogRepository.save(CreditLog.builder()
                             .date(LocalDateTime.now())
                             .credit(credit)
+                            .amount(credit.getAmount())
                             .transactionContent(TransactionContent.WITHDRAW_TO_ACCOUNT)
                             .transactionType(TransactionType.WITHDRAW)
                     .build());
@@ -114,6 +127,36 @@ public class AccountServiceImpl implements AccountService {
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(returningHistoryList);
+    }
+
+    @Override
+    public ResponseEntity<?> getRecentReturningDay(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            throw new RuntimeException("사용자를 찾을 수 없습니다.");
+        }
+
+        List<CreditReturningRequest> creditReturningRequestList =
+                creditReturningRequestRepository.getAllByUser(user.get());
+
+        if(creditReturningRequestList.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.OK).body("최근 환급 요청 내역이 존재하지 않습니다.");
+        } else {
+            CreditReturningRequest creditReturningRequest = creditReturningRequestList.get(creditReturningRequestList.size() - 1);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일, a h시 m분");
+            String formattedDateTime = creditReturningRequest.getRequestDate().format(formatter);
+
+            if(creditReturningRequest.getReturningStatus().equals(ReturningStatus.PENDING)) {
+                return ResponseEntity.status(HttpStatus.OK).body(formattedDateTime + "에 요청된 환급 승인 대기 중");
+            } else if (creditReturningRequest.getReturningStatus().equals(ReturningStatus.ACCEPTED)) {
+                return ResponseEntity.status(HttpStatus.OK).body(formattedDateTime + "에 요청된 환급 요청이 승인 됨");
+            } else if (creditReturningRequest.getReturningStatus().equals(ReturningStatus.REJECTED)) {
+                return ResponseEntity.status(HttpStatus.OK).body(formattedDateTime + "에 요청된 환급 요청이 거절 됨");
+            } else {
+                return ResponseEntity.status(HttpStatus.OK).body("최근 요청을 불러올 수 없음");
+            }
+        }
     }
 
     @Override
