@@ -11,4 +11,6 @@ public interface ProfileService {
     ResponseEntity<?> changePhoneNum(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
 
     ResponseEntity<?> changeProfileUrl(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
+
+    ResponseEntity<?> changeIntroduce(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
 }

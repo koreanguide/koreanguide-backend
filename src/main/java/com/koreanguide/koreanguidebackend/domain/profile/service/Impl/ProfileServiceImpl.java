@@ -194,4 +194,18 @@ public class ProfileServiceImpl implements ProfileService {
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
+    @Override
+    public ResponseEntity<?> changeIntroduce(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
+        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+
+        if(changeProfileRequestDto.getTarget().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        profile.setIntroduce(changeProfileRequestDto.getTarget());
+        profileRepository.save(profile);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }

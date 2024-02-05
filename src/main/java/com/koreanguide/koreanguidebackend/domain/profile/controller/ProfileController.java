@@ -57,6 +57,16 @@ public class ProfileController {
         return profileService.changeProfileUrl(GET_USER_ID_BY_TOKEN(request), changeProfileRequestDto);
     }
 
+    @PostMapping("/introduce")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<?> changeIntroduce(HttpServletRequest request,
+                                             @RequestBody ChangeProfileRequestDto changeProfileRequestDto) {
+        return profileService.changeIntroduce(GET_USER_ID_BY_TOKEN(request), changeProfileRequestDto);
+    }
+
     @GetMapping("/")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
