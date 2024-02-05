@@ -47,6 +47,16 @@ public class ProfileController {
         return profileService.changePhoneNum(GET_USER_ID_BY_TOKEN(request), changeProfileRequestDto);
     }
 
+    @PostMapping("/profile")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<?> changeProfileUrl(HttpServletRequest request,
+                                              @RequestBody ChangeProfileRequestDto changeProfileRequestDto) {
+        return profileService.changeProfileUrl(GET_USER_ID_BY_TOKEN(request), changeProfileRequestDto);
+    }
+
     @GetMapping("/")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,

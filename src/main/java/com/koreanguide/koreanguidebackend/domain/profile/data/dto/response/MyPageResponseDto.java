@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class MyPageResponseDto {
+    private String profileUrl;
     private String name;
     private String nickName;
     private String phoneNum;

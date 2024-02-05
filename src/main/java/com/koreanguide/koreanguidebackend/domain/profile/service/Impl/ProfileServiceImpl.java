@@ -43,6 +43,7 @@ public class ProfileServiceImpl implements ProfileService {
         Optional<Profile> profile = profileRepository.findByUser(user.get());
 
         return profile.orElseGet(() -> profileRepository.save(Profile.builder()
+                .profileUrl("DEFAULT")
                 .isPublic(true)
                 .introduce(null)
                 .phoneNum(null)
@@ -71,6 +72,7 @@ public class ProfileServiceImpl implements ProfileService {
 //        Profile 정보
         Profile profile = GET_PROFILE_BY_USER_ID(userId);
 
+        myPageResponseDto.setProfileUrl(profile.getProfileUrl());
         myPageResponseDto.setName(profile.getName() == null ? "미등록" : profile.getName());
         myPageResponseDto.setPhoneNum(profile.getPhoneNum() == null ? "미등록" : profile.getPhoneNum());
 
@@ -170,6 +172,24 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         profile.setPhoneNum(changeProfileRequestDto.getTarget());
+        profileRepository.save(profile);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> changeProfileUrl(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
+        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        String newProfileUrl = changeProfileRequestDto.getTarget();
+
+        // 입력값 검증
+        if(!"DEFAULT".equals(newProfileUrl) &&
+                !newProfileUrl.matches("^https://koreanguide\\.s3\\.ap-northeast-2\\.amazonaws\\.com/.*$")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("프로필 URL이 올바르지 않습니다. " +
+                    "올바른 형식: https://koreanguide.s3.ap-northeast-2.amazonaws.com/<파일명>");
+        }
+
+        profile.setProfileUrl(newProfileUrl);
         profileRepository.save(profile);
 
         return ResponseEntity.status(HttpStatus.OK).build();

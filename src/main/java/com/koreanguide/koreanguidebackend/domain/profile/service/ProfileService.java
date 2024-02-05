@@ -9,4 +9,6 @@ public interface ProfileService {
     ResponseEntity<?> changeName(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
 
     ResponseEntity<?> changePhoneNum(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
+
+    ResponseEntity<?> changeProfileUrl(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
 }
