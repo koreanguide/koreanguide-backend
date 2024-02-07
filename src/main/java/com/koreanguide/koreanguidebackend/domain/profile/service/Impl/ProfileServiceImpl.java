@@ -5,6 +5,7 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserReposi
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.BankAccounts;
 import com.koreanguide.koreanguidebackend.domain.credit.data.enums.AccountProvider;
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.BankAccountsRepository;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MyPageResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -24,13 +26,15 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfileRepository profileRepository;
     private final UserRepository userRepository;
     private final BankAccountsRepository bankAccountsRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public ProfileServiceImpl(ProfileRepository profileRepository, UserRepository userRepository,
-                              BankAccountsRepository bankAccountsRepository) {
+                              BankAccountsRepository bankAccountsRepository, PasswordEncoder passwordEncoder) {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
         this.bankAccountsRepository = bankAccountsRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Profile GET_PROFILE_BY_USER_ID(Long userId) {
@@ -191,6 +195,31 @@ public class ProfileServiceImpl implements ProfileService {
 
         profile.setProfileUrl(newProfileUrl);
         profileRepository.save(profile);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> changePassword(Long userId, ChangePasswordRequestDto changePasswordRequestDto) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if(!passwordEncoder.matches(changePasswordRequestDto.getPassword(), user.get().getPassword())) {
+            return ResponseEntity.status(HttpStatus.LOCKED).build();
+        }
+
+        String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
+        if(!changePasswordRequestDto.getNewPassword().matches(passwordPattern)) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
+        }
+
+        User updatedUser = user.get();
+
+        updatedUser.setPassword(passwordEncoder.encode(changePasswordRequestDto.getNewPassword()));
+        userRepository.save(updatedUser);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
