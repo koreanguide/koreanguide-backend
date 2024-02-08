@@ -56,6 +56,10 @@ public class ProfileServiceImpl implements ProfileService {
                 .build()));
     }
 
+    public boolean CHECK_PASSWD(User user, String password) {
+        return passwordEncoder.matches(password, user.getPassword());
+    }
+
     @Override
     public ResponseEntity<?> getUserInfo(Long userId) {
         MyPageResponseDto myPageResponseDto = new MyPageResponseDto();
@@ -149,8 +153,8 @@ public class ProfileServiceImpl implements ProfileService {
     public ResponseEntity<?> changeName(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
         Profile profile = GET_PROFILE_BY_USER_ID(userId);
 
-        if(profile.getName().equals(changeProfileRequestDto.getTarget())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        if(!CHECK_PASSWD(profile.getUser(), changeProfileRequestDto.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         if(changeProfileRequestDto.getTarget().length() > 4) {
@@ -167,8 +171,8 @@ public class ProfileServiceImpl implements ProfileService {
     public ResponseEntity<?> changePhoneNum(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
         Profile profile = GET_PROFILE_BY_USER_ID(userId);
 
-        if(profile.getPhoneNum().equals(changeProfileRequestDto.getTarget())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        if(!CHECK_PASSWD(profile.getUser(), changeProfileRequestDto.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         if(!changeProfileRequestDto.getTarget().matches("^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$")) {
@@ -230,6 +234,10 @@ public class ProfileServiceImpl implements ProfileService {
 
         if(changeProfileRequestDto.getTarget().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        if(!CHECK_PASSWD(profile.getUser(), changeProfileRequestDto.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         profile.setIntroduce(changeProfileRequestDto.getTarget());

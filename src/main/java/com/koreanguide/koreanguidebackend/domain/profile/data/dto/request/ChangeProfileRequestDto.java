@@ -11,4 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ChangeProfileRequestDto {
     private String target;
+    private String password;
 }
