@@ -11,6 +11,8 @@ public interface ProfileService {
 
     ResponseEntity<?> changePhoneNum(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
 
+    ResponseEntity<?> removeProfileUrl(Long userId);
+
     ResponseEntity<?> changeProfileUrl(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
 
     ResponseEntity<?> changePassword(Long userId, ChangePasswordRequestDto changePasswordRequestDto);

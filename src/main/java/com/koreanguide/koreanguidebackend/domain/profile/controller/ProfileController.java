@@ -58,6 +58,15 @@ public class ProfileController {
         return profileService.changeProfileUrl(GET_USER_ID_BY_TOKEN(request), changeProfileRequestDto);
     }
 
+    @DeleteMapping("/profile")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<?> removeProfileUrl(HttpServletRequest request) {
+        return profileService.removeProfileUrl(GET_USER_ID_BY_TOKEN(request));
+    }
+
     @PostMapping("/introduce")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,

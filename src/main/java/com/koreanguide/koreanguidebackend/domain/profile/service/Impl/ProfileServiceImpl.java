@@ -186,6 +186,16 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    public ResponseEntity<?> removeProfileUrl(Long userId) {
+        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+
+        profile.setProfileUrl("DEFAULT");
+        profileRepository.save(profile);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
     public ResponseEntity<?> changeProfileUrl(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
         Profile profile = GET_PROFILE_BY_USER_ID(userId);
         String newProfileUrl = changeProfileRequestDto.getTarget();
