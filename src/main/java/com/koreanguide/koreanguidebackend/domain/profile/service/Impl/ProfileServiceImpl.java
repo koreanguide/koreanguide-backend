@@ -83,6 +83,7 @@ public class ProfileServiceImpl implements ProfileService {
         myPageResponseDto.setProfileUrl(profile.getProfileUrl());
         myPageResponseDto.setName(profile.getName() == null ? "미등록" : profile.getName());
         myPageResponseDto.setPhoneNum(profile.getPhoneNum() == null ? "미등록" : profile.getPhoneNum());
+        myPageResponseDto.setIntroduce(profile.getIntroduce() == null ? "등록된 소개 글이 없습니다." : profile.getIntroduce());
 
         Optional<BankAccounts> bankAccounts = bankAccountsRepository.findBankAccountsByUser(user.get());
         if(bankAccounts.isEmpty()) {

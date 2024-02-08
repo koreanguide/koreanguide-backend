@@ -19,5 +19,6 @@ public class MyPageResponseDto {
     private String password;
     private String accountInfo;
     private String blocked;
+    private String introduce;
     private boolean isEnable;
 }
