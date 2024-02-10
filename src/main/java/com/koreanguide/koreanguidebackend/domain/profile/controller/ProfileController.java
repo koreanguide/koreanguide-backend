@@ -87,6 +87,16 @@ public class ProfileController {
         return profileService.changePassword(GET_USER_ID_BY_TOKEN(request), changePasswordRequestDto);
     }
 
+    @PostMapping("/nickname")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<?> changeNickname(HttpServletRequest request,
+                                            @RequestBody ChangeProfileRequestDto changeProfileRequestDto) {
+        return profileService.changeNickname(GET_USER_ID_BY_TOKEN(request), changeProfileRequestDto);
+    }
+
     @GetMapping("/")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,

@@ -18,4 +18,6 @@ public interface ProfileService {
     ResponseEntity<?> changePassword(Long userId, ChangePasswordRequestDto changePasswordRequestDto);
 
     ResponseEntity<?> changeIntroduce(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
+
+    ResponseEntity<?> changeNickname(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
 }

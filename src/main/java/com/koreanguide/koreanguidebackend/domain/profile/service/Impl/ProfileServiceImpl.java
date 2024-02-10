@@ -256,4 +256,28 @@ public class ProfileServiceImpl implements ProfileService {
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
+    @Override
+    public ResponseEntity<?> changeNickname(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            throw new RuntimeException("USER NOT FOUND");
+        }
+
+        if(changeProfileRequestDto.getTarget().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        if(!CHECK_PASSWD(user.get(), changeProfileRequestDto.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User updatedUser = user.get();
+        updatedUser.setNickname(changeProfileRequestDto.getTarget());
+
+        userRepository.save(updatedUser);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }
