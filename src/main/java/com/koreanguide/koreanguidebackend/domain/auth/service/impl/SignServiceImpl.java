@@ -227,6 +227,7 @@ public class SignServiceImpl implements SignService {
                 .accessToken(generateAccessToken(user.getEmail(), user.getRoles()))
                 .refreshToken(generateRefreshToken(user.getEmail()))
                 .email(user.getEmail())
+                .name(user.getNickname())
                 .msg("로그인 성공")
                 .success(true)
                 .build());
@@ -248,6 +249,7 @@ public class SignServiceImpl implements SignService {
                         .isGuide(user.get().getUserRole().equals(UserRole.GUIDE))
                         .accessToken(generateAccessToken(user.get().getEmail(), user.get().getRoles()))
                         .refreshToken(generateRefreshToken(user.get().getEmail()))
+                        .name(user.get().getNickname())
                         .email(user.get().getEmail())
                         .msg("로그인 성공")
                         .success(true)

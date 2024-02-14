@@ -15,5 +15,6 @@ public class SignInResponseDto extends BaseResponseDto {
     private String accessToken;
     private String refreshToken;
     private String email;
+    private String name;
     private boolean isGuide;
 }
