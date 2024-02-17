@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 
 public interface TrackService {
     ResponseEntity<?> getRandomTrack();
+
+    ResponseEntity<?> getAllTrackInMainPages(Long userId);
+
     ResponseEntity<?> getAllTrackByUser(Long userId);
     ResponseEntity<TrackResponseDto> getTrackById(Long userId, Long trackId);
     ResponseEntity<BaseResponseDto> applyTrack(Long userId, TrackApplyRequestDto trackApplyRequestDto);

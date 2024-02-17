@@ -143,6 +143,33 @@ public class TrackServiceImpl implements TrackService {
     }
 
     @Override
+    public ResponseEntity<?> getAllTrackInMainPages(Long userId) {
+        User user = GET_VALID_USER(userId);
+        List<TrackMainResponseDto> trackMainResponseDtoList = new ArrayList<>();
+        List<Track> trackList = trackRepository.getAllByUser(user);
+
+        for(Track track : trackList) {
+//            태그 가져오기
+            List<String> tagList = new ArrayList<>();
+            List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
+            for(TrackTag trackTag : trackTagList) {
+                tagList.add(trackTag.getTagName());
+            }
+
+
+            trackMainResponseDtoList.add(TrackMainResponseDto.builder()
+                            .trackTitle(track.getTrackTitle())
+                            .trackPreview(track.getTrackPreview())
+                            .primaryImageUrl(track.getPrimaryImageUrl())
+                            .tags(tagList)
+                            .star(track.isStar())
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(trackMainResponseDtoList);
+    }
+
+    @Override
     public ResponseEntity<?> getAllTrackByUser(Long userId) {
         User user = GET_VALID_USER(userId);
 
@@ -240,6 +267,11 @@ public class TrackServiceImpl implements TrackService {
 
         User user = GET_VALID_USER(userId);
         LocalDateTime CURRENT_TIME = LocalDateTime.now();
+
+        if(!trackApplyRequestDto.isAgreeTerms() && !trackApplyRequestDto.isAgreePublicTerms()
+                && !trackApplyRequestDto.isAgreePrivacyPolicy()) {
+            throw new RuntimeException("미동의 항목 존재");
+        }
 
         log.info("TrackServiceImpl - applyTrack: 사용자 조회 성공");
 
