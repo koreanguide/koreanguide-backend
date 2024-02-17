@@ -10,6 +10,10 @@ import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatRoom;
 import com.koreanguide.koreanguidebackend.domain.chat.data.enums.MessageType;
 import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatRoomRepository;
 import com.koreanguide.koreanguidebackend.domain.chat.service.ChatService;
+import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
+import com.koreanguide.koreanguidebackend.domain.profile.repository.ProfileRepository;
+import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
+import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -33,6 +37,8 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
     private final ChatService chatService;
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
+    private final TrackRepository trackRepository;
 
     // 연결 후
     @Override
@@ -43,7 +49,8 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 
     // 채팅 방 메시지 handle
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+    @Transactional
+    public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String payload = message.getPayload();
         log.info("payload {}", payload);
 
@@ -80,12 +87,33 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 
         chatService.saveChatMessage(chatMessage);
 
-        sendMessageToChatRoom(ChatResponseDto.builder()
-                .name(user.get().getNickname())
-                .profileUrl(null)
-                .msg(chatMessageDto.getMessage())
-                .date(CURRENT_TIME)
-                .build(), chatRoomSession);
+        Optional<Profile> profile = profileRepository.findByUser(user.get());
+
+        ChatResponseDto chatResponseDto = new ChatResponseDto();
+        chatResponseDto.setName(user.get().getNickname());
+        chatResponseDto.setMessage(chatMessageDto.getMessage());
+        chatResponseDto.setDate(CURRENT_TIME);
+
+        if(profile.isEmpty()) {
+            chatResponseDto.setProfileUrl("DEFAULT");
+        } else {
+            chatResponseDto.setProfileUrl(profile.get().getProfileUrl());
+        }
+
+        if(chatMessageDto.isUseFunction() && chatMessageDto.isUseTrackFunction()) {
+            chatResponseDto.setUseTrackFunction(true);
+
+            Optional<Track> track = trackRepository.findById(chatMessageDto.getTargetTrackId());
+
+            if(track.isPresent()) {
+                chatResponseDto.setTrackTitle(track.get().getTrackTitle());
+                chatResponseDto.setTrackPrimaryUrl(track.get().getPrimaryImageUrl());
+                chatResponseDto.setTrackId(track.get().getId());
+                chatResponseDto.setTrackPreview(track.get().getTrackPreview());
+            }
+        }
+
+        sendMessageToChatRoom(chatResponseDto, chatRoomSession);
     }
 
     // 채팅 세션 연결이 끊긴 후

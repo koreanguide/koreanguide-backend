@@ -112,7 +112,7 @@ public class ChatServiceImpl implements ChatService {
             chatResponseDtoList.add(ChatResponseDto.builder()
                     .name(chatMessage.getUser().getNickname())
                     .date(chatMessage.getDate())
-                    .msg(chatMessage.getMessage())
+                    .message(chatMessage.getMessage())
                     .profileUrl(null)
                     .build());
         }
