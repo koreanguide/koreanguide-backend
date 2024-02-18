@@ -1,4 +1,4 @@
-package com.koreanguide.koreanguidebackend.domain.track.data.dto.response;
+package com.koreanguide.koreanguidebackend.domain.track.data.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,13 +11,13 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class TrackMainResponseDto {
+public class TrackUpdateRequestDto {
     private Long trackId;
     private String trackTitle;
     private String trackPreview;
+    private String trackContent;
     private String primaryImageUrl;
-    private List<String> tags;
-    private boolean star;
-    private Long like;
-    private Long view;
+    private boolean useAutoTranslate;
+    private List<TrackImageApplyRequestDto> images;
+    private List<TrackTagApplyRequestDto> tags;
 }

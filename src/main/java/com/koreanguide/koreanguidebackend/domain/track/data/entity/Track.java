@@ -7,7 +7,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -66,6 +65,12 @@ public class Track {
 
     @Column(nullable = false)
     private boolean blocked;
+
+    @Column(nullable = false)
+    private Long viewCount = 0L;
+
+    @Column(nullable = false)
+    private boolean autoTranslate = true;
 
     @Column
     private String blockedReason;

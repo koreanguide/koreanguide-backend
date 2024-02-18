@@ -23,6 +23,7 @@ public class TrackApplyRequestDto {
     private String trackPreview;
     private String trackContent;
     private String primaryImageUrl;
+    private boolean useAutoTranslate;
     private List<TrackImageApplyRequestDto> images;
     private List<TrackTagApplyRequestDto> tags;
 }
