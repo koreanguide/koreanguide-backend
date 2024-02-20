@@ -3,6 +3,7 @@ package com.koreanguide.koreanguidebackend.domain.track.controller;
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackApplyRequestDto;
+import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackRemoveRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackUpdateRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.service.TrackService;
 import io.swagger.annotations.ApiImplicitParam;
@@ -56,5 +57,15 @@ public class TrackController {
     public ResponseEntity<?> updateTrack(HttpServletRequest request,
                                          @RequestBody TrackUpdateRequestDto trackUpdateRequestDto) {
         return trackService.updateTrack(GET_USER_ID_BY_TOKEN(request), trackUpdateRequestDto);
+    }
+
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    @DeleteMapping("/")
+    public ResponseEntity<?> removeTrack(HttpServletRequest request,
+                                         @RequestBody TrackRemoveRequestDto trackRemoveRequestDto) {
+        return trackService.removeTrack(GET_USER_ID_BY_TOKEN(request), trackRemoveRequestDto);
     }
 }

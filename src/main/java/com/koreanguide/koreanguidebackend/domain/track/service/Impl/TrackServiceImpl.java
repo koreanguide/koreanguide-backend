@@ -1,8 +1,9 @@
 package com.koreanguide.koreanguidebackend.domain.track.service.Impl;
 
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
+import com.koreanguide.koreanguidebackend.domain.review.data.entity.Review;
+import com.koreanguide.koreanguidebackend.domain.review.data.repository.ReviewRepository;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.*;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.*;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,16 +35,21 @@ public class TrackServiceImpl implements TrackService {
     private final TrackImageRepository trackImageRepository;
     private final TrackTagRepository trackTagRepository;
     private final TrackLikeRepository trackLikeRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final ReviewRepository reviewRepository;
 
     @Autowired
     public TrackServiceImpl(TrackRepository trackRepository, UserRepository userRepository,
                             TrackImageRepository trackImageRepository, TrackTagRepository trackTagRepository,
-                            TrackLikeRepository trackLikeRepository) {
+                            TrackLikeRepository trackLikeRepository, PasswordEncoder passwordEncoder,
+                            ReviewRepository reviewRepository) {
         this.trackRepository = trackRepository;
         this.userRepository = userRepository;
         this.trackImageRepository = trackImageRepository;
         this.trackTagRepository = trackTagRepository;
         this.trackLikeRepository = trackLikeRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.reviewRepository = reviewRepository;
     }
 
     public TrackInfoResponseDto GET_TRACK(User user, Long trackId) {
@@ -218,6 +225,49 @@ public class TrackServiceImpl implements TrackService {
 
             trackImageRepository.save(trackImage);
         }
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> removeTrack(Long userId, TrackRemoveRequestDto trackRemoveRequestDto) {
+        User user = GET_VALID_USER(userId);
+
+        Optional<Track> track = trackRepository.findById(trackRemoveRequestDto.getTrackId());
+
+        if(track.isEmpty()) {
+            log.error("요호 트랙이 발견되지 않음");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        if(!track.get().getUser().equals(user)) {
+            log.error("대상 트랙과 요청 사용자 미일치");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if(!passwordEncoder.matches(trackRemoveRequestDto.getPassword(), user.getPassword())) {
+            log.error("사용자 비밀번호 미일치");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track.get());
+        trackLikeRepository.deleteAll(trackLikeList);
+        log.info("해당 트랙의 모든 관심 지수 삭제");
+
+        List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track.get());
+        trackTagRepository.deleteAll(trackTagList);
+        log.info("해당 트랙의 모든 태그 삭제");
+
+        List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track.get());
+        trackImageRepository.deleteAll(trackImageList);
+        log.info("해당 트랙의 모든 이미지 삭제");
+
+        List<Review> reviewList = reviewRepository.getAllByTrack(track.get());
+        reviewRepository.deleteAll(reviewList);
+        log.info("해당 트랙의 모든 리뷰 삭제");
+
+        trackRepository.delete(track.get());
+        log.info("해당 트랙 삭제");
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
