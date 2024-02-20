@@ -3,14 +3,21 @@ package com.koreanguide.koreanguidebackend.domain.profile.service.Impl;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.BankAccounts;
+import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
 import com.koreanguide.koreanguidebackend.domain.credit.data.enums.AccountProvider;
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.BankAccountsRepository;
+import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRepository;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MainInfoResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MyPageResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
 import com.koreanguide.koreanguidebackend.domain.profile.repository.ProfileRepository;
 import com.koreanguide.koreanguidebackend.domain.profile.service.ProfileService;
+import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
+import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackLike;
+import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackLikeRepository;
+import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -27,14 +35,22 @@ public class ProfileServiceImpl implements ProfileService {
     private final UserRepository userRepository;
     private final BankAccountsRepository bankAccountsRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TrackLikeRepository trackLikeRepository;
+    private final TrackRepository trackRepository;
+    private final CreditRepository creditRepository;
 
     @Autowired
     public ProfileServiceImpl(ProfileRepository profileRepository, UserRepository userRepository,
-                              BankAccountsRepository bankAccountsRepository, PasswordEncoder passwordEncoder) {
+                              BankAccountsRepository bankAccountsRepository, PasswordEncoder passwordEncoder,
+                              TrackLikeRepository trackLikeRepository, TrackRepository trackRepository,
+                              CreditRepository creditRepository) {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
         this.bankAccountsRepository = bankAccountsRepository;
         this.passwordEncoder = passwordEncoder;
+        this.trackLikeRepository = trackLikeRepository;
+        this.trackRepository = trackRepository;
+        this.creditRepository = creditRepository;
     }
 
     public Profile GET_PROFILE_BY_USER_ID(Long userId) {
@@ -279,5 +295,51 @@ public class ProfileServiceImpl implements ProfileService {
         userRepository.save(updatedUser);
 
         return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> getMainPageInfo(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+
+        if(user.isEmpty()) {
+            throw new RuntimeException("미등록 사용자");
+        }
+
+        Long totalLiked = 0L;
+        Long newLikes = 0L;
+        Long totalView = 0L;
+        Long credit = 0L;
+
+        List<Track> trackList = trackRepository.getAllByUser(user.get());
+        for(Track track : trackList) {
+            totalView += track.getViewCount();
+
+            List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
+            totalLiked += trackLikeList.size();
+
+            if(user.get().getLastAccessTime() != null) {
+                for(TrackLike like : trackLikeList) {
+                    if(like.getLikedDt().isAfter(user.get().getLastAccessTime())) {
+                        newLikes++;
+                    }
+                }
+            }
+        }
+
+        Optional<Credit> creditInfo = creditRepository.findByUser(user.get());
+
+        if(creditInfo.isPresent()) {
+            credit = creditInfo.get().getAmount();
+        }
+
+        boolean isIncreased = newLikes > 0;
+
+        return ResponseEntity.status(HttpStatus.OK).body(MainInfoResponseDto.builder()
+                .totalView(totalView)
+                .totalLiked(totalLiked)
+                .credit(credit)
+                .isIncreased(isIncreased)
+                .increasedAmount(newLikes)
+                .build());
     }
 }

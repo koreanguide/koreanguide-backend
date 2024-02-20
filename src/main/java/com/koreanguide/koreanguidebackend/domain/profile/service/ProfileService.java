@@ -20,4 +20,6 @@ public interface ProfileService {
     ResponseEntity<?> changeIntroduce(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
 
     ResponseEntity<?> changeNickname(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
+
+    ResponseEntity<?> getMainPageInfo(Long userId);
 }

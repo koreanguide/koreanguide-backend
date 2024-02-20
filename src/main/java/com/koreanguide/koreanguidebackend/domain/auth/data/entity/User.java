@@ -97,5 +97,5 @@ public class User implements UserDetails {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    private LocalDateTime updatedAt;
+    private LocalDateTime lastAccessTime;
 }

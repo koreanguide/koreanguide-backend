@@ -211,7 +211,7 @@ public class SignServiceImpl implements SignService {
                 .password(passwordEncoder.encode(signUpRequestDto.getPassword()))
                 .roles(Collections.singletonList("ROLE_USER"))
                 .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .lastAccessTime(LocalDateTime.now())
                 .build();
 
         userRepository.save(user);
@@ -244,6 +244,11 @@ public class SignServiceImpl implements SignService {
         if (!passwordEncoder.matches(signInRequestDto.getPassword(), user.get().getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 또는 비밀번호가 일치하지 않습니다.");
         }
+
+        User updatedUser = user.get();
+        updatedUser.setLastAccessTime(LocalDateTime.now());
+
+        userRepository.save(updatedUser);
 
         return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
                         .isGuide(user.get().getUserRole().equals(UserRole.GUIDE))

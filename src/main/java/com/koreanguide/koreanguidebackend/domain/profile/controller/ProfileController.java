@@ -105,4 +105,13 @@ public class ProfileController {
     public ResponseEntity<?> getUserInfo(HttpServletRequest request) {
         return profileService.getUserInfo(GET_USER_ID_BY_TOKEN(request));
     }
+
+    @GetMapping("/main")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<?> getMainPageInfo(HttpServletRequest request) {
+        return profileService.getMainPageInfo(GET_USER_ID_BY_TOKEN(request));
+    }
 }
