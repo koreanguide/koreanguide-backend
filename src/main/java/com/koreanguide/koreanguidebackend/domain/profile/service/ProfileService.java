@@ -5,6 +5,8 @@ import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.Change
 import org.springframework.http.ResponseEntity;
 
 public interface ProfileService {
+    ResponseEntity<?> getUserProfile(Long userId);
+
     ResponseEntity<?> getUserInfo(Long userId);
 
     ResponseEntity<?> changeName(Long userId, ChangeProfileRequestDto changeProfileRequestDto);

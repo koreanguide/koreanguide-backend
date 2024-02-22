@@ -7,10 +7,13 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
 import com.koreanguide.koreanguidebackend.domain.credit.data.enums.AccountProvider;
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.BankAccountsRepository;
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRepository;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLine;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MainInfoResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MyPageResponseDto;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.ProfileResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
 import com.koreanguide.koreanguidebackend.domain.profile.repository.ProfileRepository;
 import com.koreanguide.koreanguidebackend.domain.profile.service.ProfileService;
@@ -25,6 +28,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,6 +73,11 @@ public class ProfileServiceImpl implements ProfileService {
                 .isPublic(true)
                 .introduce(null)
                 .phoneNum(null)
+                .firstLang(Language.KOREAN)
+                .secondLang(Language.ENGLISH)
+                .subwayLine(null)
+                .subwayStation(null)
+                .birth(null)
                 .name(null)
                 .user(user.get())
                 .build()));
@@ -74,6 +85,76 @@ public class ProfileServiceImpl implements ProfileService {
 
     public boolean CHECK_PASSWD(User user, String password) {
         return passwordEncoder.matches(password, user.getPassword());
+    }
+
+    public String TRANSLATE_LINE_TO_KO(SubwayLine subwayLine) {
+        String SUBWAY_LINE_KO;
+        if(subwayLine.equals(SubwayLine.LINE_1)) {
+            SUBWAY_LINE_KO = "1호선";
+        } else if (subwayLine.equals(SubwayLine.LINE_2)) {
+            SUBWAY_LINE_KO = "2호선";
+        } else if (subwayLine.equals(SubwayLine.LINE_3)) {
+            SUBWAY_LINE_KO = "3호선";
+        } else if (subwayLine.equals(SubwayLine.LINE_4)) {
+            SUBWAY_LINE_KO = "4호선";
+        } else if (subwayLine.equals(SubwayLine.LINE_5)) {
+            SUBWAY_LINE_KO = "5호선";
+        } else if (subwayLine.equals(SubwayLine.LINE_6)) {
+            SUBWAY_LINE_KO = "6호선";
+        } else if (subwayLine.equals(SubwayLine.LINE_7)) {
+            SUBWAY_LINE_KO = "7호선";
+        } else if (subwayLine.equals(SubwayLine.LINE_8)) {
+            SUBWAY_LINE_KO = "8호선";
+        } else if (subwayLine.equals(SubwayLine.LINE_9)) {
+            SUBWAY_LINE_KO = "9호선";
+        } else if (subwayLine.equals(SubwayLine.SUINBUNDANG)) {
+            SUBWAY_LINE_KO = "수인분당선";
+        } else if (subwayLine.equals(SubwayLine.SHINBUNDANG)) {
+            SUBWAY_LINE_KO = "신분당선";
+        } else if (subwayLine.equals(SubwayLine.GYEONGUIJUNGANG)) {
+            SUBWAY_LINE_KO = "경의중앙선";
+        } else if (subwayLine.equals(SubwayLine.GIMPOGOLD)) {
+            SUBWAY_LINE_KO = "김포골드라인";
+        } else if (subwayLine.equals(SubwayLine.AIRPORTRAILROAD)) {
+            SUBWAY_LINE_KO = "공항철도";
+        } else if (subwayLine.equals(SubwayLine.SEOHAE)) {
+            SUBWAY_LINE_KO = "서해선";
+        } else if (subwayLine.equals(SubwayLine.SINLIM)) {
+            SUBWAY_LINE_KO = "신림선";
+        } else {
+            SUBWAY_LINE_KO = "?";
+        }
+
+        return SUBWAY_LINE_KO;
+    }
+
+    @Override
+    public ResponseEntity<?> getUserProfile(Long userId) {
+        ProfileResponseDto profileResponseDto = new ProfileResponseDto();
+        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+
+        profileResponseDto.setProfileUrl(profile.getProfileUrl());
+        profileResponseDto.setNickName(profile.getUser().getNickname());
+        profileResponseDto.setIntroduce(profile.getIntroduce());
+        profileResponseDto.setFirstLang(profile.getFirstLang().equals(Language.KOREAN) ? "한국어" : "영어");
+        profileResponseDto.setSecondLang(profile.getSecondLang().equals(Language.ENGLISH) ? "영어" : "한국어");
+        profileResponseDto.setNearSubway(TRANSLATE_LINE_TO_KO(profile.getSubwayLine()) + " " + profile.getSubwayStation());
+
+        String birthFormat = "yyyy년 M월 dd일";
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        try {
+            Date birth = sdf.parse(profile.getBirth());
+            sdf.applyPattern(birthFormat);
+            String newBirthFormat = sdf.format(birth);
+            profileResponseDto.setBirth(newBirthFormat);
+        } catch (ParseException e) {
+            profileResponseDto.setBirth("표시할 수 없음");
+        }
+
+        profileResponseDto.setSubwayLine(profile.getSubwayLine());
+        profileResponseDto.setAddress(profile.getUser().getCountry());
+
+        return ResponseEntity.status(HttpStatus.OK).body(profileResponseDto);
     }
 
     @Override
