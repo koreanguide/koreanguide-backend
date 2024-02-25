@@ -10,8 +10,10 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRe
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLine;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MainInfoResponseDto;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MyPageInfoResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MyPageResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.ProfileResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -337,18 +340,15 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public ResponseEntity<?> changeIntroduce(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
+    public ResponseEntity<?> changeIntroduce(Long userId,
+                                             ChangeProfileNonPasswordRequestDto changeProfileNonPasswordRequestDto) {
         Profile profile = GET_PROFILE_BY_USER_ID(userId);
 
-        if(changeProfileRequestDto.getTarget().isBlank()) {
+        if(changeProfileNonPasswordRequestDto.getTarget().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        if(!CHECK_PASSWD(profile.getUser(), changeProfileRequestDto.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        profile.setIntroduce(changeProfileRequestDto.getTarget());
+        profile.setIntroduce(changeProfileNonPasswordRequestDto.getTarget());
         profileRepository.save(profile);
 
         return ResponseEntity.status(HttpStatus.OK).build();
@@ -421,6 +421,20 @@ public class ProfileServiceImpl implements ProfileService {
                 .credit(credit)
                 .isIncreased(isIncreased)
                 .increasedAmount(newLikes)
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getMyPageInfo(Long userId) {
+        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일 a h시 m분");
+        String formatDateTime = profile.getUser().getCreatedAt().format(formatter);
+        return ResponseEntity.status(HttpStatus.OK).body(MyPageInfoResponseDto.builder()
+                        .email(profile.getUser().getEmail())
+                        .password("********")
+                        .name(profile.getName())
+                        .phoneNum(profile.getPhoneNum())
+                        .registeredAt(formatDateTime)
                 .build());
     }
 }

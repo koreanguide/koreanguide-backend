@@ -2,6 +2,7 @@ package com.koreanguide.koreanguidebackend.domain.profile.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.service.ProfileService;
 import io.swagger.annotations.ApiImplicitParam;
@@ -73,8 +74,8 @@ public class ProfileController {
                     dataType = "String", paramType = "header")
     })
     public ResponseEntity<?> changeIntroduce(HttpServletRequest request,
-                                             @RequestBody ChangeProfileRequestDto changeProfileRequestDto) {
-        return profileService.changeIntroduce(GET_USER_ID_BY_TOKEN(request), changeProfileRequestDto);
+                                             @RequestBody ChangeProfileNonPasswordRequestDto changeProfileNonPasswordRequestDto) {
+        return profileService.changeIntroduce(GET_USER_ID_BY_TOKEN(request), changeProfileNonPasswordRequestDto);
     }
 
     @PostMapping("/password")
@@ -122,5 +123,14 @@ public class ProfileController {
     })
     public ResponseEntity<?> getMainPageInfo(HttpServletRequest request) {
         return profileService.getMainPageInfo(GET_USER_ID_BY_TOKEN(request));
+    }
+
+    @GetMapping("/mypage")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<?> getMyPageInfo(HttpServletRequest request) {
+        return profileService.getMyPageInfo(GET_USER_ID_BY_TOKEN(request));
     }
 }
