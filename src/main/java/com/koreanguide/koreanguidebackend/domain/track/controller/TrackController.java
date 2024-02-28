@@ -68,4 +68,13 @@ public class TrackController {
                                          @RequestBody TrackRemoveRequestDto trackRemoveRequestDto) {
         return trackService.removeTrack(GET_USER_ID_BY_TOKEN(request), trackRemoveRequestDto);
     }
+
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    @PostMapping("/star")
+    public ResponseEntity<?> setPrimaryTrack(HttpServletRequest request, @RequestParam Long trackId) {
+        return trackService.setPrimaryTrack(GET_USER_ID_BY_TOKEN(request), trackId);
+    }
 }

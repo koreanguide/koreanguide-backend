@@ -271,4 +271,24 @@ public class TrackServiceImpl implements TrackService {
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
+    @Override
+    public ResponseEntity<?> setPrimaryTrack(Long userId, Long trackId) {
+        User user = GET_VALID_USER(userId);
+        List<Track> trackList = trackRepository.getAllByUser(user);
+
+        for(Track track : trackList) {
+            if(track.isStar()) {
+                track.setStar(false);
+                trackRepository.save(track);
+            }
+        }
+
+        Track track = trackRepository.getById(trackId);
+        track.setStar(true);
+
+        trackRepository.save(track);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }
