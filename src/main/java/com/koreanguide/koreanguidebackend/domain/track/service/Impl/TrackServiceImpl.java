@@ -409,6 +409,7 @@ public class TrackServiceImpl implements TrackService {
             }
 
             topTrackResponseDtoList.add(TopTrackResponseDto.builder()
+                            .trackId(track.getId())
                             .title(track.getTrackTitle())
                             .preview(track.getTrackPreview())
                             .profileUrl(PROFILE_URL)

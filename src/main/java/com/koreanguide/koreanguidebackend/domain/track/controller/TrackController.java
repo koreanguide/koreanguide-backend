@@ -76,7 +76,7 @@ public class TrackController {
     public ResponseEntity<?> getTrackInfo(HttpServletRequest request, @RequestParam Long trackId) {
         return trackService.getTrackInfo(GET_USER_ID_BY_TOKEN(request), trackId);
     }
-    
+
     @GetMapping("/top")
     public ResponseEntity<?> getTopTrackUsedByMainPage() {
         return trackService.getTopTrackUsedByMainPage();

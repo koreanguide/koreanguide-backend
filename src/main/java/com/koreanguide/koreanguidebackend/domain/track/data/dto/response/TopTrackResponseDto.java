@@ -12,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class TopTrackResponseDto {
+    private Long trackId;
     private String title;
     private String preview;
     private String profileUrl;
