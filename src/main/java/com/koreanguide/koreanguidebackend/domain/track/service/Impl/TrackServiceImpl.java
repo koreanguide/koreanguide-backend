@@ -340,4 +340,40 @@ public class TrackServiceImpl implements TrackService {
 
         return ResponseEntity.status(HttpStatus.OK).body(trackEditInfoResponseDto);
     }
+
+    @Override
+    public ResponseEntity<?> getTrackInfo(Long userId, Long trackId) {
+        Track track = trackRepository.getById(trackId);
+
+        TrackResponseDto trackResponseDto = new TrackResponseDto();
+        trackResponseDto.setTrackId(track.getId());
+        trackResponseDto.setTitle(track.getTrackTitle());
+        trackResponseDto.setPreview(track.getTrackPreview());
+
+        List<String> TAGS_LIST = new ArrayList<>();
+        List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
+
+        for(TrackTag trackTag : trackTagList) {
+            TAGS_LIST.add(trackTag.getTagName());
+        }
+
+        trackResponseDto.setTags(TAGS_LIST);
+
+        List<String> ADDITIONAL_IMAGE_LIST = new ArrayList<>();
+        List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
+
+        for(TrackImage trackImage : trackImageList) {
+            ADDITIONAL_IMAGE_LIST.add(trackImage.getImageUrl());
+        }
+
+        trackResponseDto.setAdditionalImage(ADDITIONAL_IMAGE_LIST);
+
+        trackResponseDto.setContent(track.getTrackContent());
+
+        List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
+        trackResponseDto.setLike((long) trackLikeList.size());
+        trackResponseDto.setView(track.getViewCount());
+
+        return ResponseEntity.status(HttpStatus.OK).body(trackResponseDto);
+    }
 }

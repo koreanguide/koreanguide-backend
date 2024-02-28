@@ -18,4 +18,6 @@ public interface TrackService {
     ResponseEntity<?> getTrackDeleteInfo(Long userId, Long trackId);
 
     ResponseEntity<?> getTrackEditInfo(Long userId, Long trackId);
+
+    ResponseEntity<?> getTrackInfo(Long userId, Long trackId);
 }

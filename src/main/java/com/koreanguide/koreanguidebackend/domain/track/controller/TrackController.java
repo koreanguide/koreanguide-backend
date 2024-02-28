@@ -72,6 +72,15 @@ public class TrackController {
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
     })
+    @GetMapping("/detail")
+    public ResponseEntity<?> getTrackInfo(HttpServletRequest request, @RequestParam Long trackId) {
+        return trackService.getTrackInfo(GET_USER_ID_BY_TOKEN(request), trackId);
+    }
+
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
     @DeleteMapping("/")
     public ResponseEntity<?> removeTrack(HttpServletRequest request,
                                          @RequestBody TrackRemoveRequestDto trackRemoveRequestDto) {

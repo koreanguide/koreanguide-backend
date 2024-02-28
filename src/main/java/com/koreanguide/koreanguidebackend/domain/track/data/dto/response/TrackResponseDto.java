@@ -18,16 +18,13 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class TrackResponseDto {
-    private BaseResponseDto baseResponseDto;
-    private String trackTitle;
-    private String trackPreview;
-    private String primaryImageUrl;
-    private List<TrackImageResponseDto> images;
-    private List<TrackTagResponseDto> tags;
-    private String name;
-    private String email;
-    private boolean visible;
-    private boolean blocked;
-    private boolean star;
-    private String blockedReason;
+    private Long trackId;
+    private String title;
+    private String preview;
+    private List<String> tags;
+    private String primaryImage;
+    private List<String> additionalImage;
+    private String content;
+    private Long like;
+    private Long view;
 }
