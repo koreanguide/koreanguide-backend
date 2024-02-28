@@ -1,9 +1,6 @@
 package com.koreanguide.koreanguidebackend.domain.profile.service;
 
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeNearSubwayRequestDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.*;
 import org.springframework.http.ResponseEntity;
 
 public interface ProfileService {
@@ -31,4 +28,10 @@ public interface ProfileService {
     ResponseEntity<?> getMyPageInfo(Long userId);
 
     ResponseEntity<?> changeNearSubway(Long userId, ChangeNearSubwayRequestDto changeNearSubwayRequestDto);
+
+    ResponseEntity<?> changeAddress(Long userId, ChangeAddressRequestDto changeAddressRequestDto);
+
+    ResponseEntity<?> changeBirth(Long userId, ChangeBrithReqeustDto changeBrithReqeustDto);
+
+    ResponseEntity<?> getInfoBoxInfo(Long userId);
 }

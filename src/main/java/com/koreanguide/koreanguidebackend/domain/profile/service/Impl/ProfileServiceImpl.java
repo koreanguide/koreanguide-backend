@@ -9,14 +9,8 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.repository.BankAcco
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRepository;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLine;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeNearSubwayRequestDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MainInfoResponseDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MyPageInfoResponseDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MyPageResponseDto;
-import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.ProfileResponseDto;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.*;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.*;
 import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
 import com.koreanguide.koreanguidebackend.domain.profile.repository.ProfileRepository;
 import com.koreanguide.koreanguidebackend.domain.profile.service.ProfileService;
@@ -37,6 +31,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @Slf4j
@@ -453,5 +449,52 @@ public class ProfileServiceImpl implements ProfileService {
         profileRepository.save(profile);
 
         return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> changeAddress(Long userId, ChangeAddressRequestDto changeAddressRequestDto) {
+        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+
+        if(changeAddressRequestDto.getSeoulCountry() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        User user = profile.getUser();
+        user.setCountry(changeAddressRequestDto.getSeoulCountry());
+
+        userRepository.save(user);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> changeBirth(Long userId, ChangeBrithReqeustDto changeBrithReqeustDto) {
+        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+
+        String birth = changeBrithReqeustDto.getBirth();
+        Pattern pattern = Pattern.compile("^\\d{8}$");
+        Matcher matcher = pattern.matcher(birth);
+
+        if (!matcher.matches()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("생년월일 정규식 미일치");
+        }
+
+        profile.setBirth(birth);
+        profileRepository.save(profile);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
+    public ResponseEntity<?> getInfoBoxInfo(Long userId) {
+        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        Credit credit = creditRepository.getByUser(profile.getUser());
+
+        return ResponseEntity.status(HttpStatus.OK).body(InfoBoxResponseDto.builder()
+                        .name(profile.getUser().getNickname())
+                        .profileUrl(profile.getProfileUrl())
+                        .email(profile.getUser().getEmail())
+                        .credit(credit.getAmount())
+                .build());
     }
 }
