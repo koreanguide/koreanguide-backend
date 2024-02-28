@@ -9,6 +9,7 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.repository.BankAcco
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRepository;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLine;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeNearSubwayRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
@@ -436,5 +437,21 @@ public class ProfileServiceImpl implements ProfileService {
                         .phoneNum(profile.getPhoneNum())
                         .registeredAt(formatDateTime)
                 .build());
+    }
+
+    @Override
+    public ResponseEntity<?> changeNearSubway(Long userId, ChangeNearSubwayRequestDto changeNearSubwayRequestDto) {
+        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+
+        if(changeNearSubwayRequestDto.getSubwayLine() == null || changeNearSubwayRequestDto.getStation().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        profile.setSubwayLine(changeNearSubwayRequestDto.getSubwayLine());
+        profile.setSubwayStation(changeNearSubwayRequestDto.getStation());
+
+        profileRepository.save(profile);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

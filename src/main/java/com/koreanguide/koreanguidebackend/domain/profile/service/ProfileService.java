@@ -1,5 +1,6 @@
 package com.koreanguide.koreanguidebackend.domain.profile.service;
 
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeNearSubwayRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
@@ -28,4 +29,6 @@ public interface ProfileService {
     ResponseEntity<?> getMainPageInfo(Long userId);
 
     ResponseEntity<?> getMyPageInfo(Long userId);
+
+    ResponseEntity<?> changeNearSubway(Long userId, ChangeNearSubwayRequestDto changeNearSubwayRequestDto);
 }

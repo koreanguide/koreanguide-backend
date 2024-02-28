@@ -1,6 +1,7 @@
 package com.koreanguide.koreanguidebackend.domain.profile.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeNearSubwayRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangePasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.ChangeProfileRequestDto;
@@ -132,5 +133,15 @@ public class ProfileController {
     })
     public ResponseEntity<?> getMyPageInfo(HttpServletRequest request) {
         return profileService.getMyPageInfo(GET_USER_ID_BY_TOKEN(request));
+    }
+
+    @PostMapping("/subway")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<?> changeNearSubway(HttpServletRequest request,
+                                              @RequestBody ChangeNearSubwayRequestDto changeNearSubwayRequestDto) {
+        return profileService.changeNearSubway(GET_USER_ID_BY_TOKEN(request), changeNearSubwayRequestDto);
     }
 }
