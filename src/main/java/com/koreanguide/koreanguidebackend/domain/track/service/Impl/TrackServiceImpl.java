@@ -2,6 +2,8 @@ package com.koreanguide.koreanguidebackend.domain.track.service.Impl;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
+import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
+import com.koreanguide.koreanguidebackend.domain.profile.repository.ProfileRepository;
 import com.koreanguide.koreanguidebackend.domain.review.data.entity.Review;
 import com.koreanguide.koreanguidebackend.domain.review.data.repository.ReviewRepository;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.*;
@@ -17,6 +19,7 @@ import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackTagR
 import com.koreanguide.koreanguidebackend.domain.track.service.TrackService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,12 +40,13 @@ public class TrackServiceImpl implements TrackService {
     private final TrackLikeRepository trackLikeRepository;
     private final PasswordEncoder passwordEncoder;
     private final ReviewRepository reviewRepository;
+    private final ProfileRepository profileRepository;
 
     @Autowired
     public TrackServiceImpl(TrackRepository trackRepository, UserRepository userRepository,
                             TrackImageRepository trackImageRepository, TrackTagRepository trackTagRepository,
                             TrackLikeRepository trackLikeRepository, PasswordEncoder passwordEncoder,
-                            ReviewRepository reviewRepository) {
+                            ReviewRepository reviewRepository, ProfileRepository profileRepository) {
         this.trackRepository = trackRepository;
         this.userRepository = userRepository;
         this.trackImageRepository = trackImageRepository;
@@ -50,6 +54,7 @@ public class TrackServiceImpl implements TrackService {
         this.trackLikeRepository = trackLikeRepository;
         this.passwordEncoder = passwordEncoder;
         this.reviewRepository = reviewRepository;
+        this.profileRepository = profileRepository;
     }
 
     public TrackInfoResponseDto GET_TRACK(User user, Long trackId) {
@@ -375,5 +380,45 @@ public class TrackServiceImpl implements TrackService {
         trackResponseDto.setView(track.getViewCount());
 
         return ResponseEntity.status(HttpStatus.OK).body(trackResponseDto);
+    }
+
+    @Override
+    public ResponseEntity<?> getTopTrackUsedByMainPage() {
+        PageRequest pageRequest = PageRequest.of(0, 3);
+        List<Track> topTracks = trackRepository.findTop3ByOrderByLikesAndViewCountAndCreatedAtDesc(pageRequest);
+
+        List<TopTrackResponseDto> topTrackResponseDtoList = new ArrayList<>();
+
+        for(Track track : topTracks) {
+            List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
+            List<String> TAGS_LIST = new ArrayList<>();
+
+            for(TrackTag trackTag : trackTagList) {
+                TAGS_LIST.add(trackTag.getTagName());
+            }
+
+            List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
+
+            Optional<Profile> profile = profileRepository.findByUser(track.getUser());
+            String PROFILE_URL;
+
+            if(profile.isEmpty()) {
+                PROFILE_URL = "DEFAULT";
+            } else {
+                PROFILE_URL = profile.get().getProfileUrl();
+            }
+
+            topTrackResponseDtoList.add(TopTrackResponseDto.builder()
+                            .title(track.getTrackTitle())
+                            .preview(track.getTrackPreview())
+                            .profileUrl(PROFILE_URL)
+                            .nickname(track.getUser().getNickname())
+                            .view(track.getViewCount())
+                            .like((long) trackLikeList.size())
+                            .tags(TAGS_LIST)
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(topTrackResponseDtoList);
     }
 }

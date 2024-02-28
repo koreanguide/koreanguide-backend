@@ -20,4 +20,6 @@ public interface TrackService {
     ResponseEntity<?> getTrackEditInfo(Long userId, Long trackId);
 
     ResponseEntity<?> getTrackInfo(Long userId, Long trackId);
+
+    ResponseEntity<?> getTopTrackUsedByMainPage();
 }
