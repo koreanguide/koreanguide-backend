@@ -14,4 +14,8 @@ public interface TrackService {
     ResponseEntity<?> removeTrack(Long userId, TrackRemoveRequestDto trackRemoveRequestDto);
 
     ResponseEntity<?> setPrimaryTrack(Long userId, Long trackId);
+
+    ResponseEntity<?> getTrackDeleteInfo(Long userId, Long trackId);
+
+    ResponseEntity<?> getTrackEditInfo(Long userId, Long trackId);
 }

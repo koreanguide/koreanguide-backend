@@ -291,4 +291,53 @@ public class TrackServiceImpl implements TrackService {
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
+    @Override
+    public ResponseEntity<?> getTrackDeleteInfo(Long userId, Long trackId) {
+        Track track = trackRepository.getById(trackId);
+        List<Review> reviewList = reviewRepository.getAllByTrack(track);
+        List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
+
+        return ResponseEntity.status(HttpStatus.OK).body(TrackDeleteInfoResponseDto.builder()
+                        .like((long) trackLikeList.size())
+                        .view(track.getViewCount())
+                        .review((long) reviewList.size())
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getTrackEditInfo(Long userId, Long trackId) {
+        Track track = trackRepository.getById(trackId);
+
+        TrackEditInfoResponseDto trackEditInfoResponseDto = new TrackEditInfoResponseDto();
+
+        trackEditInfoResponseDto.setTrackId(track.getId());
+        trackEditInfoResponseDto.setTitle(track.getTrackTitle());
+        trackEditInfoResponseDto.setPrimaryImage(track.getPrimaryImageUrl());
+
+        List<String> ADDITIONAL_IMAGE_LIST = new ArrayList<>();
+        List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
+
+        for(TrackImage trackImage : trackImageList) {
+            ADDITIONAL_IMAGE_LIST.add(trackImage.getImageUrl());
+        }
+
+        trackEditInfoResponseDto.setAdditionalImage(ADDITIONAL_IMAGE_LIST);
+
+        trackEditInfoResponseDto.setPreview(track.getTrackPreview());
+
+        List<String> TAGS_LIST = new ArrayList<>();
+        List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
+
+        for(TrackTag trackTag : trackTagList) {
+            TAGS_LIST.add(trackTag.getTagName());
+        }
+
+        trackEditInfoResponseDto.setTags(TAGS_LIST);
+        trackEditInfoResponseDto.setContent(track.getTrackContent());
+        trackEditInfoResponseDto.setVisible(track.isVisible());
+        trackEditInfoResponseDto.setUseAutoTranslate(trackEditInfoResponseDto.isUseAutoTranslate());
+
+        return ResponseEntity.status(HttpStatus.OK).body(trackEditInfoResponseDto);
+    }
 }
