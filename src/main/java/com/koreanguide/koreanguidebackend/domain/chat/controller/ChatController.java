@@ -47,4 +47,9 @@ public class ChatController {
     public ResponseEntity<List<ChatResponseDto>> getChatMsg(@RequestParam String roomId, @PageableDefault(size = 10) Pageable pageable) {
         return chatService.getChatMsg(roomId, pageable);
     }
+
+    @GetMapping("/msg")
+    public ResponseEntity<List<ChatResponseDto>> getAllChattingMsg(@RequestParam String chatRoomId) {
+        return chatService.getAllChattingList(chatRoomId);
+    }
 }

@@ -12,7 +12,6 @@ import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatMessag
 import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatRoomRepository;
 import com.koreanguide.koreanguidebackend.domain.chat.service.ChatService;
 import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
-import com.koreanguide.koreanguidebackend.domain.profile.repository.ProfileRepository;
 import com.koreanguide.koreanguidebackend.domain.profile.service.Impl.ProfileServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -72,6 +71,28 @@ public class ChatServiceImpl implements ChatService {
                             .msg(CHAT_ROOM_ID)
                     .build());
         }
+    }
+
+    @Override
+    public ResponseEntity<List<ChatResponseDto>> getAllChattingList(String chatRoomId) {
+        ChatRoom chatRoom = chatRoomRepository.getChatRoomByRoomId(chatRoomId);
+
+        List<ChatMessage> chatMessageList = chatMessageRepository.findAllByChatRoom(chatRoom);
+        List<ChatResponseDto> chatResponseDtoList = new ArrayList<>();
+
+        for(ChatMessage chatMessage : chatMessageList) {
+            ChatResponseDto chatResponseDto = new ChatResponseDto();
+            Profile profile = profileService.GET_PROFILE_BY_USER_ID(chatMessage.getUser().getId());
+            chatResponseDto.setProfileUrl(profile.getProfileUrl());
+            chatResponseDto.setName(profile.getUser().getNickname());
+            chatResponseDto.setMessage(chatMessage.getMessage());
+            chatResponseDto.setDate(chatMessage.getDate());
+            chatResponseDto.setSenderId(chatMessage.getUser().getId());
+
+            chatResponseDtoList.add(chatResponseDto);
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(chatResponseDtoList);
     }
 
     @Override

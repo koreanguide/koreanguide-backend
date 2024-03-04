@@ -16,6 +16,8 @@ public interface ChatService {
 
     ResponseEntity<BaseResponseDto> createChatRoom(CreateChatRoomRequestDto createChatRoomRequestDto);
 
+    ResponseEntity<List<ChatResponseDto>> getAllChattingList(String chatRoomId);
+
     ResponseEntity<List<ChatListResponseDto>> getChatList(Long userId);
 
     ResponseEntity<List<ChatResponseDto>> getChatMsg(String roomId, Pageable pageable);
