@@ -20,7 +20,7 @@ public class ChatResponseDto {
     private String message;
 //    전송 시간
     private LocalDateTime date;
-
+    private Long senderId;
     private boolean useTrackFunction = false;
     private String trackPrimaryUrl = null;
     private String trackTitle = null;

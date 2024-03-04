@@ -65,6 +65,7 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 
         if (chatMessageDto.getMessageType().equals(MessageType.ENTER)) {
             chatRoomSession.add(session);
+            return;
         }
         if (chatRoomSession.size()>=3) {
             removeClosedSession(chatRoomSession);
@@ -91,6 +92,7 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 
         ChatResponseDto chatResponseDto = new ChatResponseDto();
         chatResponseDto.setName(user.get().getNickname());
+        chatResponseDto.setSenderId(user.get().getId());
         chatResponseDto.setMessage(chatMessageDto.getMessage());
         chatResponseDto.setDate(CURRENT_TIME);
 

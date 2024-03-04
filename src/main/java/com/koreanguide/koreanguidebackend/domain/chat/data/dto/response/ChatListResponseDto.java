@@ -14,5 +14,6 @@ public class ChatListResponseDto {
     private String name;
     private String lastTalkedAt;
     private String lastMessage;
+    private String chatRoomId;
     private boolean unread;
 }

@@ -11,6 +11,9 @@ import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatRoom;
 import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatMessageRepository;
 import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatRoomRepository;
 import com.koreanguide.koreanguidebackend.domain.chat.service.ChatService;
+import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
+import com.koreanguide.koreanguidebackend.domain.profile.repository.ProfileRepository;
+import com.koreanguide.koreanguidebackend.domain.profile.service.Impl.ProfileServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,13 +32,15 @@ public class ChatServiceImpl implements ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final ProfileServiceImpl profileService;
 
     @Autowired
     public ChatServiceImpl(ChatRoomRepository chatRoomRepository, ChatMessageRepository chatMessageRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository, ProfileServiceImpl profileService) {
         this.chatRoomRepository = chatRoomRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.userRepository = userRepository;
+        this.profileService = profileService;
     }
 
     @Override
@@ -82,16 +87,22 @@ public class ChatServiceImpl implements ChatService {
 
         for(ChatRoom chatRoom : chatRoomList) {
             List<ChatMessage> chatMessageList = chatMessageRepository.findAllByChatRoom(chatRoom);
-            User targetUser = chatRoom.getSender() != user.get() ? chatRoom.getRecipient() : chatRoom.getSender();
-            chatListResponseDtoList.add(ChatListResponseDto.builder()
-                            .lastTalkedAt(chatMessageList.get(chatMessageList.size() - 1).getDate().toString())
-                            .name(targetUser.getNickname())
-                            .lastMessage(chatMessageList.get(chatMessageList.size() - 1).getMessage())
-                            // 상대방 프로필 사진
-                            .profileUrl(null)
-                            // 읽음 여부
-                            .unread(false)
-                    .build());
+            User targetUser = chatRoom.getSender() != chatRoom.getSender() ? user.get() : chatRoom.getRecipient();
+            Profile profile = profileService.GET_PROFILE_BY_USER_ID(targetUser.getId());
+            ChatListResponseDto chatListResponseDto = new ChatListResponseDto();
+            chatListResponseDto.setName(targetUser.getNickname());
+            if(chatMessageList.isEmpty()) {
+                chatListResponseDto.setLastTalkedAt("알 수 없음");
+                chatListResponseDto.setLastMessage("대화를 시작했습니다.");
+            } else {
+                chatListResponseDto.setLastTalkedAt(chatMessageList.get(chatMessageList.size() - 1).getDate().toString());
+                chatListResponseDto.setLastMessage(chatMessageList.get(chatMessageList.size() - 1).getMessage());
+            }
+            chatListResponseDto.setChatRoomId(chatRoom.getRoomId());
+            chatListResponseDto.setProfileUrl(profile.getProfileUrl());
+            chatListResponseDto.setUnread(false);
+
+            chatListResponseDtoList.add(chatListResponseDto);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(chatListResponseDtoList);
