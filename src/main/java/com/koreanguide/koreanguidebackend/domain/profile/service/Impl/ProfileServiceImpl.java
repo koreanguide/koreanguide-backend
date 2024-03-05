@@ -1,5 +1,6 @@
 package com.koreanguide.koreanguidebackend.domain.profile.service.Impl;
 
+import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.BankAccounts;
@@ -44,12 +45,13 @@ public class ProfileServiceImpl implements ProfileService {
     private final TrackLikeRepository trackLikeRepository;
     private final TrackRepository trackRepository;
     private final CreditRepository creditRepository;
+    private final UserDao userDao;
 
     @Autowired
     public ProfileServiceImpl(ProfileRepository profileRepository, UserRepository userRepository,
                               BankAccountsRepository bankAccountsRepository, PasswordEncoder passwordEncoder,
                               TrackLikeRepository trackLikeRepository, TrackRepository trackRepository,
-                              CreditRepository creditRepository) {
+                              CreditRepository creditRepository, UserDao userDao) {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
         this.bankAccountsRepository = bankAccountsRepository;
@@ -57,6 +59,7 @@ public class ProfileServiceImpl implements ProfileService {
         this.trackLikeRepository = trackLikeRepository;
         this.trackRepository = trackRepository;
         this.creditRepository = creditRepository;
+        this.userDao = userDao;
     }
 
     public Profile GET_PROFILE_BY_USER_ID(Long userId) {
@@ -69,7 +72,6 @@ public class ProfileServiceImpl implements ProfileService {
         Optional<Profile> profile = profileRepository.findByUser(user.get());
 
         return profile.orElseGet(() -> profileRepository.save(Profile.builder()
-                .profileUrl("DEFAULT")
                 .isPublic(true)
                 .introduce(null)
                 .phoneNum(null)
@@ -133,7 +135,7 @@ public class ProfileServiceImpl implements ProfileService {
         ProfileResponseDto profileResponseDto = new ProfileResponseDto();
         Profile profile = GET_PROFILE_BY_USER_ID(userId);
 
-        profileResponseDto.setProfileUrl(profile.getProfileUrl());
+        profileResponseDto.setProfileUrl(profile.getUser().getProfileUrl());
         profileResponseDto.setNickName(profile.getUser().getNickname());
         profileResponseDto.setIntroduce(profile.getIntroduce());
         profileResponseDto.setFirstLang(profile.getFirstLang().equals(Language.KOREAN) ? "한국어" : "영어");
@@ -177,7 +179,7 @@ public class ProfileServiceImpl implements ProfileService {
 //        Profile 정보
         Profile profile = GET_PROFILE_BY_USER_ID(userId);
 
-        myPageResponseDto.setProfileUrl(profile.getProfileUrl());
+        myPageResponseDto.setProfileUrl(profile.getUser().getProfileUrl());
         myPageResponseDto.setName(profile.getName() == null ? "미등록" : profile.getName());
         myPageResponseDto.setPhoneNum(profile.getPhoneNum() == null ? "미등록" : profile.getPhoneNum());
         myPageResponseDto.setIntroduce(profile.getIntroduce() == null ? "등록된 소개 글이 없습니다." : profile.getIntroduce());
@@ -285,17 +287,17 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> removeProfileUrl(Long userId) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        User user = userDao.getUserEntity(userId);
 
-        profile.setProfileUrl("DEFAULT");
-        profileRepository.save(profile);
+        user.setProfileUrl("DEFAULT");
+        userDao.saveUserEntity(user);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> changeProfileUrl(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        User user = userDao.getUserEntity(userId);
         String newProfileUrl = changeProfileRequestDto.getTarget();
 
         // 입력값 검증
@@ -305,8 +307,8 @@ public class ProfileServiceImpl implements ProfileService {
                     "올바른 형식: https://koreanguide.s3.ap-northeast-2.amazonaws.com/<파일명>");
         }
 
-        profile.setProfileUrl(newProfileUrl);
-        profileRepository.save(profile);
+        user.setProfileUrl(newProfileUrl);
+        userDao.saveUserEntity(user);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -492,7 +494,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         return ResponseEntity.status(HttpStatus.OK).body(InfoBoxResponseDto.builder()
                         .name(profile.getUser().getNickname())
-                        .profileUrl(profile.getProfileUrl())
+                        .profileUrl(profile.getUser().getProfileUrl())
                         .email(profile.getUser().getEmail())
                         .credit(credit.getAmount())
                 .build());

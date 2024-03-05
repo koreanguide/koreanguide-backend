@@ -6,7 +6,6 @@ import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLi
 import lombok.*;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -19,9 +18,6 @@ public class Profile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
-    private String profileUrl;
 
     @Column
     private String name;

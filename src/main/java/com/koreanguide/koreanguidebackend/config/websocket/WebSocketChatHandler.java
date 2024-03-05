@@ -1,8 +1,8 @@
 package com.koreanguide.koreanguidebackend.config.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
-import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.ChatMessageDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatResponseDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatMessage;
@@ -36,13 +36,13 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
     private final Map<String,Set<WebSocketSession>> chatRoomSessionMap = new HashMap<>();
     private final ChatService chatService;
     private final ChatRoomRepository chatRoomRepository;
-    private final UserRepository userRepository;
+    private final UserDao userDao;
     private final ProfileRepository profileRepository;
     private final TrackRepository trackRepository;
 
     // 연결 후
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(WebSocketSession session) {
         log.info("{} 연결 됨", session.getId());
         sessions.add(session);
     }
@@ -71,16 +71,17 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
             removeClosedSession(chatRoomSession);
         }
 
-        Optional<User> user = userRepository.findById(chatMessageDto.getSenderId());
+        User user = userDao.getUserEntity(chatMessageDto.getSenderId());
         Optional<ChatRoom> chatRoom = chatRoomRepository.findChatRoomByRoomId(chatMessageDto.getChatRoomId());
-        LocalDateTime CURRENT_TIME = LocalDateTime.now();
 
-        if(user.isEmpty() || chatRoom.isEmpty()) {
-            throw new RuntimeException("사용자 또는 활성 채팅방이 존재하지 않음");
+        if(chatRoom.isEmpty()) {
+            throw new RuntimeException("미존재 채팅방");
         }
 
+        LocalDateTime CURRENT_TIME = LocalDateTime.now();
+
         ChatMessage chatMessage = ChatMessage.builder()
-                    .user(user.get())
+                    .user(user)
                     .chatRoom(chatRoom.get())
                     .message(chatMessageDto.getMessage())
                     .date(CURRENT_TIME)
@@ -88,18 +89,18 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 
         chatService.saveChatMessage(chatMessage);
 
-        Optional<Profile> profile = profileRepository.findByUser(user.get());
+        Optional<Profile> profile = profileRepository.findByUser(user);
 
         ChatResponseDto chatResponseDto = new ChatResponseDto();
-        chatResponseDto.setName(user.get().getNickname());
-        chatResponseDto.setSenderId(user.get().getId());
+        chatResponseDto.setName(user.getNickname());
+        chatResponseDto.setSenderId(user.getId());
         chatResponseDto.setMessage(chatMessageDto.getMessage());
         chatResponseDto.setDate(CURRENT_TIME);
 
         if(profile.isEmpty()) {
             chatResponseDto.setProfileUrl("DEFAULT");
         } else {
-            chatResponseDto.setProfileUrl(profile.get().getProfileUrl());
+            chatResponseDto.setProfileUrl(user.getProfileUrl());
         }
 
         if(chatMessageDto.isUseFunction() && chatMessageDto.isUseTrackFunction()) {
@@ -120,7 +121,7 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 
     // 채팅 세션 연결이 끊긴 후
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         log.info("{} 연결 끊김", session.getId());
         sessions.remove(session);
     }

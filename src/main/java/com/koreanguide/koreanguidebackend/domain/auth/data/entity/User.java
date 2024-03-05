@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserRole;
-import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserType;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -37,6 +36,9 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     private String nickname;
+
+    @Column
+    private String profileUrl = "DEFAULT";
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
