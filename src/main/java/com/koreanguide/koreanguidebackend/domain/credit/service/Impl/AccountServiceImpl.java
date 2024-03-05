@@ -2,6 +2,7 @@ package com.koreanguide.koreanguidebackend.domain.credit.service.Impl;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dao.CreditDao;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.BankAccountApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.BankAccountResponseDto;
@@ -42,7 +43,8 @@ public class AccountServiceImpl implements AccountService {
             throw new RuntimeException("100,000 크레딧 이상부터 출금 신청이 가능합니다.");
         }
 
-        Credit credit = creditDao.getUserCreditEntity(userId);
+        User user = userDao.getUserEntity(userId);
+        Credit credit = creditDao.getUserCreditEntity(user);
 
         if(credit.getAmount() < amount) {
             return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
@@ -50,7 +52,8 @@ public class AccountServiceImpl implements AccountService {
                             .msg("크레딧 잔액 부족")
                     .build());
         } else {
-            List<CreditReturningRequest> creditReturningRequestList = creditDao.getUserCreditReturningRequestEntity(userId);
+            List<CreditReturningRequest> creditReturningRequestList = creditDao.getUserCreditReturningRequestEntity(
+                    user);
 
             for(CreditReturningRequest creditReturningRequest : creditReturningRequestList) {
                 if(creditReturningRequest.getReturningStatus().equals(ReturningStatus.PENDING)) {
@@ -91,7 +94,8 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public ResponseEntity<List<CreditReturningRequestResponseDto>> getReturningHistory(Long userId) {
         List<CreditReturningRequestResponseDto> returningHistoryList = new ArrayList<>();
-        List<CreditReturningRequest> creditReturningRequests = creditDao.getUserCreditReturningRequestEntity(userId);
+        User user = userDao.getUserEntity(userId);
+        List<CreditReturningRequest> creditReturningRequests = creditDao.getUserCreditReturningRequestEntity(user);
 
         for(CreditReturningRequest creditReturningRequest : creditReturningRequests) {
             returningHistoryList.add(CreditReturningRequestResponseDto.builder()
@@ -107,8 +111,9 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ResponseEntity<?> getRecentReturningDay(Long userId) {
+        User user = userDao.getUserEntity(userId);
         List<CreditReturningRequest> creditReturningRequestList =
-                creditDao.getUserCreditReturningRequestEntity(userId);
+                creditDao.getUserCreditReturningRequestEntity(user);
 
         if(creditReturningRequestList.isEmpty()) {
             return ResponseEntity.status(HttpStatus.OK).body("최근 환급 요청 내역이 존재하지 않습니다.");
@@ -131,7 +136,8 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ResponseEntity<?> getBankAccount(Long userId) {
-        BankAccounts bankAccounts = creditDao.getBankAccountsEntity(userId);
+        User user = userDao.getUserEntity(userId);
+        BankAccounts bankAccounts = creditDao.getBankAccountsEntity(user);
 
         return ResponseEntity.status(HttpStatus.OK).body(BankAccountResponseDto.builder()
                         .accountHolderName(bankAccounts.getAccountHolderName())
@@ -143,8 +149,9 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public ResponseEntity<BaseResponseDto> applyBankAccount(Long userId,
                                                             BankAccountApplyRequestDto bankAccountApplyRequestDto) {
+        User user = userDao.getUserEntity(userId);
         try {
-            BankAccounts bankAccounts = creditDao.getBankAccountsEntity(userId);
+            BankAccounts bankAccounts = creditDao.getBankAccountsEntity(user);
             bankAccounts.setAccountNumber(bankAccountApplyRequestDto.getBankAccountNumber());
             bankAccounts.setAccountProvider(bankAccountApplyRequestDto.getBankAccountProvider());
             bankAccounts.setAppliedAt(LocalDateTime.now());
@@ -169,7 +176,8 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ResponseEntity<BaseResponseDto> removeBankAccount(Long userId) {
-        creditDao.deleteBankAccountsEntity(userId);
+        User user = userDao.getUserEntity(userId);
+        creditDao.deleteBankAccountsEntity(user);
 
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
                         .success(true)

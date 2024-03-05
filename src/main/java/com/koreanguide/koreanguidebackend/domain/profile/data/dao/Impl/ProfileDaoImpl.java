@@ -1,6 +1,5 @@
 package com.koreanguide.koreanguidebackend.domain.profile.data.dao.Impl;
 
-import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dao.ProfileDao;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
@@ -13,17 +12,13 @@ import java.util.Optional;
 @Component
 public class ProfileDaoImpl implements ProfileDao {
     private final ProfileRepository profileRepository;
-    private final UserDao userDao;
 
-    public ProfileDaoImpl(ProfileRepository profileRepository, UserDao userDao) {
+    public ProfileDaoImpl(ProfileRepository profileRepository) {
         this.profileRepository = profileRepository;
-        this.userDao = userDao;
     }
 
     @Override
-    public Profile getUserProfile(Long userId) {
-        User user = userDao.getUserEntity(userId);
-
+    public Profile getUserProfile(User user) {
         Optional<Profile> profile = profileRepository.findByUser(user);
 
         return profile.orElseGet(() -> profileRepository.save(Profile.builder()

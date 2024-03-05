@@ -10,17 +10,17 @@ import com.koreanguide.koreanguidebackend.domain.credit.exception.BankAccountsNo
 import java.util.List;
 
 public interface CreditDao {
-    Credit getUserCreditEntity(Long userId);
+    Credit getUserCreditEntity(User user);
     void saveCreditEntity(Credit credit);
-    List<CreditLog> getUserCreditLogEntity(Long userId);
+    List<CreditLog> getUserCreditLogEntity(User user);
     void saveCreditLogEntity(CreditLog creditLog);
-    List<CreditReturningRequest> getUserCreditReturningRequestEntity(Long userId);
+    List<CreditReturningRequest> getUserCreditReturningRequestEntity(User user);
     void saveCreditReturningRequestEntity(CreditReturningRequest creditReturningRequest);
-    BankAccounts getBankAccountsEntity(Long userId) throws BankAccountsNotFoundException;
+    BankAccounts getBankAccountsEntity(User user) throws BankAccountsNotFoundException;
 
     BankAccounts getBankAccountsEntityViaUser(User user) throws BankAccountsNotFoundException;
 
-    void deleteBankAccountsEntity(Long userId);
+    void deleteBankAccountsEntity(User user);
 
     void saveBankAccountsEntity(BankAccounts bankAccounts);
 }

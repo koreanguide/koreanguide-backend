@@ -1,5 +1,7 @@
 package com.koreanguide.koreanguidebackend.domain.credit.service.Impl;
 
+import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
+import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dao.CreditDao;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.TransactionCreditRequestDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditHistoryResponseDto;
@@ -22,15 +24,18 @@ import java.util.List;
 @Service
 public class CreditServiceImpl implements CreditService {
     private final CreditDao creditDao;
+    private final UserDao userDao;
 
     @Autowired
-    public CreditServiceImpl(CreditDao creditDao) {
+    public CreditServiceImpl(CreditDao creditDao, UserDao userDao) {
         this.creditDao = creditDao;
+        this.userDao = userDao;
     }
 
     @Override
     public ResponseEntity<CreditResponseDto> checkBalance(Long userId) {
-        Credit credit = creditDao.getUserCreditEntity(userId);
+        User user = userDao.getUserEntity(userId);
+        Credit credit = creditDao.getUserCreditEntity(user);
 
         return ResponseEntity.status(HttpStatus.OK).body(CreditResponseDto.builder()
                         .success(true)
@@ -63,7 +68,8 @@ public class CreditServiceImpl implements CreditService {
 
     @Override
     public ResponseEntity<List<CreditHistoryResponseDto>> getCreditHistory(Long userId) {
-        List<CreditLog> creditLogList = creditDao.getUserCreditLogEntity(userId);
+        User user = userDao.getUserEntity(userId);
+        List<CreditLog> creditLogList = creditDao.getUserCreditLogEntity(user);
         List<CreditHistoryResponseDto> creditHistoryResponseDtoList = new ArrayList<>();
 
         for(CreditLog creditLog : creditLogList) {
@@ -87,7 +93,8 @@ public class CreditServiceImpl implements CreditService {
     public ResponseEntity<CreditResponseDto> depositCredit(Long userId,
                                                            TransactionCreditRequestDto transactionCreditRequestDto) {
         LocalDateTime localDateTime = LocalDateTime.now();
-        Credit credit = creditDao.getUserCreditEntity(userId);
+        User user = userDao.getUserEntity(userId);
+        Credit credit = creditDao.getUserCreditEntity(user);
 
         credit.setAmount(credit.getAmount() + transactionCreditRequestDto.getAmount());
         credit.setRecentUsed(LocalDateTime.now());
@@ -112,7 +119,8 @@ public class CreditServiceImpl implements CreditService {
     @Override
     public ResponseEntity<CreditResponseDto> withdrawCredit(Long userId,
                                                             TransactionCreditRequestDto transactionCreditRequestDto) {
-        Credit credit = creditDao.getUserCreditEntity(userId);
+        User user = userDao.getUserEntity(userId);
+        Credit credit = creditDao.getUserCreditEntity(user);
 
         if(credit.getAmount() - transactionCreditRequestDto.getAmount() < 0) {
             return ResponseEntity.status(HttpStatus.OK).body(CreditResponseDto.builder()

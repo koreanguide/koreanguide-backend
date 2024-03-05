@@ -91,7 +91,8 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ResponseEntity<?> getUserProfile(Long userId) {
         ProfileResponseDto profileResponseDto = new ProfileResponseDto();
-        Profile profile = profileDao.getUserProfile(userId);
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
 
         profileResponseDto.setProfileUrl(profile.getUser().getProfileUrl());
         profileResponseDto.setNickName(profile.getUser().getNickname());
@@ -123,7 +124,7 @@ public class ProfileServiceImpl implements ProfileService {
 
 //        사용자 정보 확인
         User user = userDao.getUserEntity(userId);
-        Profile profile = profileDao.getUserProfile(userId);
+        Profile profile = profileDao.getUserProfile(user);
 
         myPageResponseDto.setNickName(user.getNickname());
         myPageResponseDto.setEmail(user.getEmail());
@@ -202,7 +203,8 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> changeName(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
-        Profile profile = profileDao.getUserProfile(userId);
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
 
         if(!userDao.checkPassword(profile.getUser(), changeProfileRequestDto.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -220,7 +222,8 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> changePhoneNum(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
-        Profile profile = profileDao.getUserProfile(userId);
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
 
         if(!userDao.checkPassword(profile.getUser(), changeProfileRequestDto.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -275,7 +278,8 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ResponseEntity<?> changeIntroduce(Long userId,
                                              ChangeProfileNonPasswordRequestDto changeProfileNonPasswordRequestDto) {
-        Profile profile = profileDao.getUserProfile(userId);
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
 
         if(changeProfileNonPasswordRequestDto.getTarget().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -320,7 +324,7 @@ public class ProfileServiceImpl implements ProfileService {
             totalLiked += trackDao.trackLikeCount(track);
         }
 
-        Credit creditInfo = creditDao.getUserCreditEntity(userId);
+        Credit creditInfo = creditDao.getUserCreditEntity(user);
         credit = creditInfo.getAmount();
 
         boolean isIncreased = false;
@@ -336,7 +340,8 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> getMyPageInfo(Long userId) {
-        Profile profile = profileDao.getUserProfile(userId);
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일 a h시 m분");
         String formatDateTime = profile.getUser().getCreatedAt().format(formatter);
         return ResponseEntity.status(HttpStatus.OK).body(MyPageInfoResponseDto.builder()
@@ -350,7 +355,8 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> changeNearSubway(Long userId, ChangeNearSubwayRequestDto changeNearSubwayRequestDto) {
-        Profile profile = profileDao.getUserProfile(userId);
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
 
         if(changeNearSubwayRequestDto.getSubwayLine() == null || changeNearSubwayRequestDto.getStation().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -380,7 +386,8 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> changeBirth(Long userId, ChangeBrithReqeustDto changeBrithReqeustDto) {
-        Profile profile = profileDao.getUserProfile(userId);
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
 
         String birth = changeBrithReqeustDto.getBirth();
         Pattern pattern = Pattern.compile("^\\d{8}$");
@@ -398,8 +405,9 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> getInfoBoxInfo(Long userId) {
-        Profile profile = profileDao.getUserProfile(userId);
-        Credit credit = creditDao.getUserCreditEntity(userId);
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
+        Credit credit = creditDao.getUserCreditEntity(user);
 
         return ResponseEntity.status(HttpStatus.OK).body(InfoBoxResponseDto.builder()
                         .name(profile.getUser().getNickname())

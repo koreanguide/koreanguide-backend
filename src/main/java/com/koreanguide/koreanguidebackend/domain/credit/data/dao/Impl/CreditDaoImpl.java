@@ -24,22 +24,18 @@ public class CreditDaoImpl implements CreditDao {
     private final CreditLogRepository creditLogRepository;
     private final CreditRepository creditRepository;
     private final CreditReturningRequestRepository creditReturningRequestRepository;
-    private final UserDao userDao;
 
     public CreditDaoImpl(BankAccountsRepository bankAccountsRepository, CreditLogRepository creditLogRepository,
-                         CreditRepository creditRepository, UserDao userDao,
+                         CreditRepository creditRepository,
                          CreditReturningRequestRepository creditReturningRequestRepository) {
         this.bankAccountsRepository = bankAccountsRepository;
         this.creditLogRepository = creditLogRepository;
         this.creditRepository = creditRepository;
-        this.userDao = userDao;
         this.creditReturningRequestRepository = creditReturningRequestRepository;
     }
 
     @Override
-    public Credit getUserCreditEntity(Long userId) {
-        User user = userDao.getUserEntity(userId);
-
+    public Credit getUserCreditEntity(User user) {
         Optional<Credit> credit = creditRepository.findByUser(user);
 
         return credit.orElseGet(() -> creditRepository.save(Credit.builder()
@@ -55,8 +51,8 @@ public class CreditDaoImpl implements CreditDao {
     }
 
     @Override
-    public List<CreditLog> getUserCreditLogEntity(Long userId) {
-        return creditLogRepository.findAllByCredit(getUserCreditEntity(userId));
+    public List<CreditLog> getUserCreditLogEntity(User user) {
+        return creditLogRepository.findAllByCredit(getUserCreditEntity(user));
     }
 
     @Override
@@ -65,8 +61,8 @@ public class CreditDaoImpl implements CreditDao {
     }
 
     @Override
-    public List<CreditReturningRequest> getUserCreditReturningRequestEntity(Long userId) {
-        return creditReturningRequestRepository.getAllByUser(userDao.getUserEntity(userId));
+    public List<CreditReturningRequest> getUserCreditReturningRequestEntity(User user) {
+        return creditReturningRequestRepository.getAllByUser(user);
     }
 
     @Override
@@ -75,9 +71,8 @@ public class CreditDaoImpl implements CreditDao {
     }
 
     @Override
-    public BankAccounts getBankAccountsEntity(Long userId) throws BankAccountsNotFoundException {
-        Optional<BankAccounts> bankAccounts = bankAccountsRepository.findBankAccountsByUser(
-                userDao.getUserEntity(userId));
+    public BankAccounts getBankAccountsEntity(User user) throws BankAccountsNotFoundException {
+        Optional<BankAccounts> bankAccounts = bankAccountsRepository.findBankAccountsByUser(user);
 
         if(bankAccounts.isEmpty()) {
             throw new BankAccountsNotFoundException();
@@ -98,9 +93,9 @@ public class CreditDaoImpl implements CreditDao {
     }
 
     @Override
-    public void deleteBankAccountsEntity(Long userId) {
+    public void deleteBankAccountsEntity(User user) {
         bankAccountsRepository.delete(
-                getBankAccountsEntity(userId)
+                getBankAccountsEntity(user)
         );
     }
 

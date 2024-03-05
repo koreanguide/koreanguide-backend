@@ -1,16 +1,16 @@
 package com.koreanguide.koreanguidebackend.domain.review.service.Impl;
 
+import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
-import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
+import com.koreanguide.koreanguidebackend.domain.review.data.dao.ReviewDao;
 import com.koreanguide.koreanguidebackend.domain.review.data.dto.request.ReviewCommentRequestDto;
 import com.koreanguide.koreanguidebackend.domain.review.data.dto.request.ReviewRequestDto;
 import com.koreanguide.koreanguidebackend.domain.review.data.dto.response.RecentReviewResponseDto;
 import com.koreanguide.koreanguidebackend.domain.review.data.dto.response.ReviewResponseDto;
 import com.koreanguide.koreanguidebackend.domain.review.data.entity.Review;
-import com.koreanguide.koreanguidebackend.domain.review.data.repository.ReviewRepository;
 import com.koreanguide.koreanguidebackend.domain.review.service.ReviewService;
+import com.koreanguide.koreanguidebackend.domain.track.data.dao.TrackDao;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
-import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,46 +20,30 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class ReviewServiceImpl implements ReviewService {
-    private final ReviewRepository reviewRepository;
-    private final UserRepository userRepository;
-    private final TrackRepository trackRepository;
-    private final String USER_NOT_FOUND = "미등록 사용자";
-    private final String TRACK_NOT_FOUND = "미등록 트랙";
-    private final String REVIEW_NOT_FOUND = "미등록 리뷰";
-    private final String UNAUTHORIZED_USER = "권한 부족";
-    private final String SUCCESS_MSG = "처리 성공";
+    private final ReviewDao reviewDao;
+    private final UserDao userDao;
+    private final TrackDao trackDao;
 
     @Autowired
-    public ReviewServiceImpl(ReviewRepository reviewRepository, UserRepository userRepository,
-                             TrackRepository trackRepository) {
-        this.reviewRepository = reviewRepository;
-        this.userRepository = userRepository;
-        this.trackRepository = trackRepository;
+    public ReviewServiceImpl(ReviewDao reviewDao, UserDao userDao, TrackDao trackDao) {
+        this.reviewDao = reviewDao;
+        this.userDao = userDao;
+        this.trackDao = trackDao;
     }
 
     @Override
     public ResponseEntity<?> getRecentReview(Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-
-        if(user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(USER_NOT_FOUND);
-        }
-
-        List<Track> track = trackRepository.getAllByUser(user.get());
-
-        if(track.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        User user = userDao.getUserEntity(userId);
+        List<Track> track = trackDao.getUserAllTrack(user);
 
         List<Review> reviewList = new ArrayList<>();
 
         for(Track temp : track) {
-            List<Review> foundReviewViaTrack = reviewRepository.getAllByTrack(temp);
+            List<Review> foundReviewViaTrack = reviewDao.getTrackAllReview(temp);
             reviewList.addAll(foundReviewViaTrack);
         }
 
@@ -87,17 +71,12 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public ResponseEntity<?> getAllReview(Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-
-        if(user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(USER_NOT_FOUND);
-        }
-
-        List<Track> trackList = trackRepository.getAllByUser(user.get());
+        User user = userDao.getUserEntity(userId);
+        List<Track> trackList = trackDao.getUserAllTrack(user);
         List<ReviewResponseDto> reviewResponseDtoList = new ArrayList<>();
 
         for(Track track : trackList) {
-            List<Review> reviewList = reviewRepository.getAllByTrack(track);
+            List<Review> reviewList = reviewDao.getTrackAllReview(track);
 
             for(Review review : reviewList) {
                 reviewResponseDtoList.add(ReviewResponseDto.builder()
@@ -118,13 +97,9 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public ResponseEntity<?> getReview(Long trackId) {
-        Optional<Track> track = trackRepository.findById(trackId);
+        Track track = trackDao.getTrackEntity(trackId);
 
-        if(track.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(TRACK_NOT_FOUND);
-        }
-
-        List<Review> reviewList = reviewRepository.getAllByTrack(track.get());
+        List<Review> reviewList = reviewDao.getTrackAllReview(track);
         List<ReviewResponseDto> reviewResponseDtoList = new ArrayList<>();
 
         for(Review review : reviewList) {
@@ -145,88 +120,54 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public ResponseEntity<?> uploadReview(Long userId, ReviewRequestDto reviewRequestDto) {
-        Optional<User> user = userRepository.findById(userId);
+        User user = userDao.getUserEntity(userId);
+        Track track = trackDao.getTrackEntity(reviewRequestDto.getTargetTrackId());
+        LocalDateTime CURRENT_TIME = LocalDateTime.now();
 
-        if(user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(USER_NOT_FOUND);
-        }
-
-        Optional<Track> track = trackRepository.findById(reviewRequestDto.getTargetTrackId());
-
-        if(track.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(TRACK_NOT_FOUND);
-        }
-
-        reviewRepository.save(Review.builder()
+        reviewDao.saveReviewEntity(Review.builder()
                         .content(reviewRequestDto.getContent())
-                        .user(user.get())
+                        .user(user)
                         .useAble(true)
-                        .track(track.get())
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
+                        .track(track)
+                        .createdAt(CURRENT_TIME)
+                        .updatedAt(CURRENT_TIME)
                 .build());
 
-        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_MSG);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> uploadReviewComment(Long userId, ReviewCommentRequestDto reviewCommentRequestDto) {
-        Optional<User> user = userRepository.findById(userId);
+        User user = userDao.getUserEntity(userId);
+        Track track = trackDao.getTrackEntity(reviewCommentRequestDto.getTargetTrackId());
 
-        if(user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(USER_NOT_FOUND);
+        if(!track.getUser().equals(user)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Optional<Track> track = trackRepository.findById(reviewCommentRequestDto.getTargetTrackId());
+        Review review = reviewDao.getReviewEntity(reviewCommentRequestDto.getTargetReviewId());
 
-        if(track.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(TRACK_NOT_FOUND);
-        }
+        review.setComment(reviewCommentRequestDto.getContent());
+        review.setUpdatedAt(LocalDateTime.now());
 
-        if(!track.get().getUser().equals(user.get())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(UNAUTHORIZED_USER);
-        }
+        reviewDao.saveReviewEntity(review);
 
-        Optional<Review> review = reviewRepository.findById(reviewCommentRequestDto.getTargetReviewId());
-
-        if(review.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(REVIEW_NOT_FOUND);
-        }
-
-        Review newReview = review.get();
-
-        newReview.setComment(reviewCommentRequestDto.getContent());
-        newReview.setUpdatedAt(LocalDateTime.now());
-
-        reviewRepository.save(newReview);
-
-        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_MSG);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> deleteReview(Long userId, Long reviewId) {
-        Optional<User> user = userRepository.findById(userId);
+        User user = userDao.getUserEntity(userId);
+        Review review = reviewDao.getReviewEntity(reviewId);
 
-        if(user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(USER_NOT_FOUND);
+        if(!review.getUser().equals(user)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Optional<Review> review = reviewRepository.findById(reviewId);
+        review.setUseAble(false);
 
-        if(review.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(REVIEW_NOT_FOUND);
-        }
+        reviewDao.saveReviewEntity(review);
 
-        if(!review.get().getUser().equals(user.get())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(UNAUTHORIZED_USER);
-        }
-
-        Review updatedReview = review.get();
-
-        updatedReview.setUseAble(false);
-
-        reviewRepository.save(updatedReview);
-
-        return ResponseEntity.status(HttpStatus.OK).body(SUCCESS_MSG);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
