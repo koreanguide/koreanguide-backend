@@ -2,11 +2,11 @@ package com.koreanguide.koreanguidebackend.domain.profile.service.Impl;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
+import com.koreanguide.koreanguidebackend.domain.credit.data.dao.CreditDao;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.BankAccounts;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
 import com.koreanguide.koreanguidebackend.domain.credit.data.enums.AccountProvider;
-import com.koreanguide.koreanguidebackend.domain.credit.data.repository.BankAccountsRepository;
-import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRepository;
+import com.koreanguide.koreanguidebackend.domain.credit.exception.BankAccountsNotFoundException;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dao.ProfileDao;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLine;
@@ -27,25 +27,22 @@ import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 @Slf4j
 public class ProfileServiceImpl implements ProfileService {
-    private final BankAccountsRepository bankAccountsRepository;
-    private final CreditRepository creditRepository;
     private final UserDao userDao;
     private final TrackDao trackDao;
     private final ProfileDao profileDao;
+    private final CreditDao creditDao;
 
     @Autowired
-    public ProfileServiceImpl(ProfileDao profileDao, BankAccountsRepository bankAccountsRepository,
-                              CreditRepository creditRepository, UserDao userDao, TrackDao trackDao) {
+    public ProfileServiceImpl(ProfileDao profileDao, CreditDao creditDao,
+                              UserDao userDao, TrackDao trackDao) {
         this.profileDao = profileDao;
-        this.bankAccountsRepository = bankAccountsRepository;
-        this.creditRepository = creditRepository;
+        this.creditDao = creditDao;
         this.userDao = userDao;
         this.trackDao = trackDao;
     }
@@ -138,11 +135,9 @@ public class ProfileServiceImpl implements ProfileService {
         myPageResponseDto.setPhoneNum(profile.getPhoneNum() == null ? "미등록" : profile.getPhoneNum());
         myPageResponseDto.setIntroduce(profile.getIntroduce() == null ? "등록된 소개 글이 없습니다." : profile.getIntroduce());
 
-        Optional<BankAccounts> bankAccounts = bankAccountsRepository.findBankAccountsByUser(user);
-        if(bankAccounts.isEmpty()) {
-            myPageResponseDto.setAccountInfo("미등록");
-        } else {
-            AccountProvider accountProvider = bankAccounts.get().getAccountProvider();
+        try {
+            BankAccounts bankAccounts = creditDao.getBankAccountsEntityViaUser(user);
+            AccountProvider accountProvider = bankAccounts.getAccountProvider();
             String ACCOUNT_PROVIDER_KO_NAME = "";
 
             if(accountProvider.equals(AccountProvider.KYONGNAMBANK)) {
@@ -197,7 +192,9 @@ public class ProfileServiceImpl implements ProfileService {
                 ACCOUNT_PROVIDER_KO_NAME = "신한";
             }
 
-            myPageResponseDto.setAccountInfo(ACCOUNT_PROVIDER_KO_NAME + " " + bankAccounts.get().getAccountNumber());
+            myPageResponseDto.setAccountInfo(ACCOUNT_PROVIDER_KO_NAME + " " + bankAccounts.getAccountNumber());
+        } catch (BankAccountsNotFoundException e) {
+            myPageResponseDto.setAccountInfo("미등록");
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(myPageResponseDto);
@@ -323,11 +320,8 @@ public class ProfileServiceImpl implements ProfileService {
             totalLiked += trackDao.trackLikeCount(track);
         }
 
-        Optional<Credit> creditInfo = creditRepository.findByUser(user);
-
-        if(creditInfo.isPresent()) {
-            credit = creditInfo.get().getAmount();
-        }
+        Credit creditInfo = creditDao.getUserCreditEntity(userId);
+        credit = creditInfo.getAmount();
 
         boolean isIncreased = false;
 
@@ -405,7 +399,7 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ResponseEntity<?> getInfoBoxInfo(Long userId) {
         Profile profile = profileDao.getUserProfile(userId);
-        Credit credit = creditRepository.getByUser(profile.getUser());
+        Credit credit = creditDao.getUserCreditEntity(userId);
 
         return ResponseEntity.status(HttpStatus.OK).body(InfoBoxResponseDto.builder()
                         .name(profile.getUser().getNickname())
