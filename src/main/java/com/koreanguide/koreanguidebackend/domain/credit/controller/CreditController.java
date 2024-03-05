@@ -1,7 +1,6 @@
 package com.koreanguide.koreanguidebackend.domain.credit.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.BankAccountApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.TransactionCreditRequestDto;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditHistoryResponseDto;
@@ -38,7 +37,7 @@ public class CreditController {
                     dataType = "String", paramType = "header")
     })
     @PostMapping("/refund")
-    public ResponseEntity<BaseResponseDto> requestReturningToAccount(HttpServletRequest request,
+    public ResponseEntity<?> requestReturningToAccount(HttpServletRequest request,
                                                                      @RequestParam Long amount) {
         return accountService.requestReturningToAccount(
                 jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")), amount);
@@ -69,7 +68,7 @@ public class CreditController {
                     dataType = "String", paramType = "header")
     })
     @PostMapping("/bank")
-    public ResponseEntity<BaseResponseDto> applyBankAccount(
+    public ResponseEntity<?> applyBankAccount(
             HttpServletRequest request,
             @RequestBody BankAccountApplyRequestDto bankAccountApplyRequestDto) {
         return accountService.applyBankAccount(jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")),
@@ -90,7 +89,7 @@ public class CreditController {
                     dataType = "String", paramType = "header")
     })
     @DeleteMapping("/bank")
-    public ResponseEntity<BaseResponseDto> removeBankAccount(HttpServletRequest request) {
+    public ResponseEntity<?> removeBankAccount(HttpServletRequest request) {
         return accountService.removeBankAccount(
                 jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
     }

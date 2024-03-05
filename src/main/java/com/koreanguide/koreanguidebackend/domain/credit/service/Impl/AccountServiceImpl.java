@@ -1,7 +1,6 @@
 package com.koreanguide.koreanguidebackend.domain.credit.service.Impl;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dao.CreditDao;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.request.BankAccountApplyRequestDto;
@@ -38,29 +37,24 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public ResponseEntity<BaseResponseDto> requestReturningToAccount(Long userId, Long amount) {
+    public ResponseEntity<?> requestReturningToAccount(Long userId, Long amount) {
         if(amount < 100000) {
-            throw new RuntimeException("100,000 크레딧 이상부터 출금 신청이 가능합니다.");
+            //        100,000 크레딧 이상 출금 신청 가능
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
         }
 
         User user = userDao.getUserEntity(userId);
         Credit credit = creditDao.getUserCreditEntity(user);
 
         if(credit.getAmount() < amount) {
-            return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
-                            .success(false)
-                            .msg("크레딧 잔액 부족")
-                    .build());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } else {
             List<CreditReturningRequest> creditReturningRequestList = creditDao.getUserCreditReturningRequestEntity(
                     user);
 
             for(CreditReturningRequest creditReturningRequest : creditReturningRequestList) {
                 if(creditReturningRequest.getReturningStatus().equals(ReturningStatus.PENDING)) {
-                    return ResponseEntity.status(HttpStatus.LOCKED).body(BaseResponseDto.builder()
-                                    .success(false)
-                                    .msg("진행 중인 환급 요청이 존재합니다. 환급 요청이 모두 완료된 후 신청해야 합니다.")
-                            .build());
+                    return ResponseEntity.status(HttpStatus.LOCKED).build();
                 }
             }
 
@@ -84,10 +78,7 @@ public class AccountServiceImpl implements AccountService {
                             .credit(credit)
                     .build());
 
-            return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
-                            .success(true)
-                            .msg("지급 요청이 완료되었습니다.")
-                    .build());
+            return ResponseEntity.status(HttpStatus.OK).build();
         }
     }
 
@@ -147,7 +138,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public ResponseEntity<BaseResponseDto> applyBankAccount(Long userId,
+    public ResponseEntity<?> applyBankAccount(Long userId,
                                                             BankAccountApplyRequestDto bankAccountApplyRequestDto) {
         User user = userDao.getUserEntity(userId);
         try {
@@ -168,20 +159,14 @@ public class AccountServiceImpl implements AccountService {
                     .build());
         }
 
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
-                        .success(true)
-                        .msg("계좌 등록이 완료되었습니다.")
-                .build());
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
-    public ResponseEntity<BaseResponseDto> removeBankAccount(Long userId) {
+    public ResponseEntity<?> removeBankAccount(Long userId) {
         User user = userDao.getUserEntity(userId);
         creditDao.deleteBankAccountsEntity(user);
 
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
-                        .success(true)
-                        .msg("등록된 계좌 삭제가 완료되었습니다.")
-                .build());
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

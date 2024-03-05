@@ -237,8 +237,6 @@ public class SignServiceImpl implements SignService {
                 .refreshToken(generateRefreshToken(user.getEmail()))
                 .email(user.getEmail())
                 .name(user.getNickname())
-                .msg("로그인 성공")
-                .success(true)
                 .build());
     }
 
@@ -271,8 +269,6 @@ public class SignServiceImpl implements SignService {
                         .refreshToken(GENERATED_REFRESH_TOKEN)
                         .name(user.get().getNickname())
                         .email(user.get().getEmail())
-                        .msg("로그인 성공")
-                        .success(true)
                 .build());
     }
 

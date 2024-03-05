@@ -1,11 +1,7 @@
 package com.koreanguide.koreanguidebackend.domain.auth.controller;
 
-import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.*;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.TokenResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.VerifyType;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +20,10 @@ import java.util.Map;
 @RequestMapping("/api/v1")
 public class SignController {
     private final SignService signService;
-    private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    public SignController(SignService signService, JwtTokenProvider jwtTokenProvider) {
+    public SignController(SignService signService) {
         this.signService = signService;
-        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @PostMapping("/verify/request/pw")

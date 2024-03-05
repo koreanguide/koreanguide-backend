@@ -1,11 +1,5 @@
 package com.koreanguide.koreanguidebackend.domain.track.data.dto.response;
 
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackImageApplyRequestDto;
-import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackTagApplyRequestDto;
-import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackImage;
-import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackTag;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -1,6 +1,5 @@
 package com.koreanguide.koreanguidebackend.domain.chat.service.Impl;
 
-import com.koreanguide.koreanguidebackend.common.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.CreateChatRoomRequestDto;
@@ -44,7 +43,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ResponseEntity<BaseResponseDto> createChatRoom(CreateChatRoomRequestDto createChatRoomRequestDto) {
+    public ResponseEntity<?> createChatRoom(CreateChatRoomRequestDto createChatRoomRequestDto) {
         User sender = userDao.getUserEntity(createChatRoomRequestDto.getSenderId());
         User recipient = userDao.getUserEntity(createChatRoomRequestDto.getRecipientId());
 
@@ -56,10 +55,7 @@ public class ChatServiceImpl implements ChatService {
                 .recipient(recipient)
                 .build());
 
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponseDto.builder()
-                        .success(true)
-                        .msg(CHAT_ROOM_ID)
-                .build());
+        return ResponseEntity.status(HttpStatus.OK).body(CHAT_ROOM_ID);
     }
 
     @Override

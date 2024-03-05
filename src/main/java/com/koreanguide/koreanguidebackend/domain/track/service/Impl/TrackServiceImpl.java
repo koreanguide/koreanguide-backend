@@ -2,8 +2,8 @@ package com.koreanguide.koreanguidebackend.domain.track.service.Impl;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
+import com.koreanguide.koreanguidebackend.domain.review.data.dao.ReviewDao;
 import com.koreanguide.koreanguidebackend.domain.review.data.entity.Review;
-import com.koreanguide.koreanguidebackend.domain.review.data.repository.ReviewRepository;
 import com.koreanguide.koreanguidebackend.domain.track.data.dao.TrackDao;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.*;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.*;
@@ -25,12 +25,12 @@ import java.util.List;
 @Slf4j
 public class TrackServiceImpl implements TrackService {
     private final TrackDao trackDao;
-    private final ReviewRepository reviewRepository;
+    private final ReviewDao reviewDao;
     private final UserDao userDao;
 
     @Autowired
-    public TrackServiceImpl(ReviewRepository reviewRepository, UserDao userDao, TrackDao trackDao) {
-        this.reviewRepository = reviewRepository;
+    public TrackServiceImpl(ReviewDao reviewDao, UserDao userDao, TrackDao trackDao) {
+        this.reviewDao = reviewDao;
         this.userDao = userDao;
         this.trackDao = trackDao;
     }
@@ -160,7 +160,7 @@ public class TrackServiceImpl implements TrackService {
     @Override
     public ResponseEntity<?> getTrackDeleteInfo(Long userId, Long trackId) {
         Track track = trackDao.getTrackEntity(trackId);
-        List<Review> reviewList = reviewRepository.getAllByTrack(track);
+        List<Review> reviewList = reviewDao.getTrackAllReview(track);
 
         return ResponseEntity.status(HttpStatus.OK).body(TrackDeleteInfoResponseDto.builder()
                         .like(trackDao.trackLikeCount(track))

@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @ToString(callSuper = true)
 @SuperBuilder
-public class SignInResponseDto extends BaseResponseDto {
+public class SignInResponseDto {
     private String accessToken;
     private String refreshToken;
     private String email;

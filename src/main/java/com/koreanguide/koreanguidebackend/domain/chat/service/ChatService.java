@@ -1,6 +1,5 @@
 package com.koreanguide.koreanguidebackend.domain.chat.service;
 
-import com.koreanguide.koreanguidebackend.common.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.CreateChatRoomRequestDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatListResponseDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatResponseDto;
@@ -13,14 +12,9 @@ import java.util.List;
 
 public interface ChatService {
     void saveChatRoom(ChatRoom chatRoom);
-
-    ResponseEntity<BaseResponseDto> createChatRoom(CreateChatRoomRequestDto createChatRoomRequestDto);
-
+    ResponseEntity<?> createChatRoom(CreateChatRoomRequestDto createChatRoomRequestDto);
     ResponseEntity<List<ChatResponseDto>> getAllChattingList(String chatRoomId);
-
     ResponseEntity<List<ChatListResponseDto>> getChatList(Long userId);
-
     ResponseEntity<List<ChatResponseDto>> getChatMsg(String roomId, Pageable pageable);
-
     void saveChatMessage(ChatMessage chatMessage);
 }

@@ -1,7 +1,6 @@
 package com.koreanguide.koreanguidebackend.domain.track.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
-import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackApplyRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackRemoveRequestDto;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.TrackUpdateRequestDto;

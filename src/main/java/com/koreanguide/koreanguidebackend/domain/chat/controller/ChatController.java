@@ -1,6 +1,5 @@
 package com.koreanguide.koreanguidebackend.domain.chat.controller;
 
-import com.koreanguide.koreanguidebackend.common.BaseResponseDto;
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.CreateChatRoomRequestDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatListResponseDto;
@@ -30,7 +29,7 @@ public class ChatController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<BaseResponseDto> createChatRoom(@RequestBody CreateChatRoomRequestDto createChatRoomRequestDto) {
+    public ResponseEntity<?> createChatRoom(@RequestBody CreateChatRoomRequestDto createChatRoomRequestDto) {
         return chatService.createChatRoom(createChatRoomRequestDto);
     }
 
