@@ -2,28 +2,24 @@ package com.koreanguide.koreanguidebackend.domain.profile.service.Impl;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
-import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.BankAccounts;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
 import com.koreanguide.koreanguidebackend.domain.credit.data.enums.AccountProvider;
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.BankAccountsRepository;
 import com.koreanguide.koreanguidebackend.domain.credit.data.repository.CreditRepository;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dao.ProfileDao;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLine;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.*;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.*;
 import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
-import com.koreanguide.koreanguidebackend.domain.profile.repository.ProfileRepository;
 import com.koreanguide.koreanguidebackend.domain.profile.service.ProfileService;
+import com.koreanguide.koreanguidebackend.domain.track.data.dao.TrackDao;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
-import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackLike;
-import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackLikeRepository;
-import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
@@ -38,55 +34,20 @@ import java.util.regex.Pattern;
 @Service
 @Slf4j
 public class ProfileServiceImpl implements ProfileService {
-    private final ProfileRepository profileRepository;
-    private final UserRepository userRepository;
     private final BankAccountsRepository bankAccountsRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final TrackLikeRepository trackLikeRepository;
-    private final TrackRepository trackRepository;
     private final CreditRepository creditRepository;
     private final UserDao userDao;
+    private final TrackDao trackDao;
+    private final ProfileDao profileDao;
 
     @Autowired
-    public ProfileServiceImpl(ProfileRepository profileRepository, UserRepository userRepository,
-                              BankAccountsRepository bankAccountsRepository, PasswordEncoder passwordEncoder,
-                              TrackLikeRepository trackLikeRepository, TrackRepository trackRepository,
-                              CreditRepository creditRepository, UserDao userDao) {
-        this.profileRepository = profileRepository;
-        this.userRepository = userRepository;
+    public ProfileServiceImpl(ProfileDao profileDao, BankAccountsRepository bankAccountsRepository,
+                              CreditRepository creditRepository, UserDao userDao, TrackDao trackDao) {
+        this.profileDao = profileDao;
         this.bankAccountsRepository = bankAccountsRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.trackLikeRepository = trackLikeRepository;
-        this.trackRepository = trackRepository;
         this.creditRepository = creditRepository;
         this.userDao = userDao;
-    }
-
-    public Profile GET_PROFILE_BY_USER_ID(Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-
-        if(user.isEmpty()) {
-            throw new RuntimeException("사용자 부정확");
-        }
-
-        Optional<Profile> profile = profileRepository.findByUser(user.get());
-
-        return profile.orElseGet(() -> profileRepository.save(Profile.builder()
-                .isPublic(true)
-                .introduce(null)
-                .phoneNum(null)
-                .firstLang(Language.KOREAN)
-                .secondLang(Language.ENGLISH)
-                .subwayLine(null)
-                .subwayStation(null)
-                .birth(null)
-                .name(null)
-                .user(user.get())
-                .build()));
-    }
-
-    public boolean CHECK_PASSWD(User user, String password) {
-        return passwordEncoder.matches(password, user.getPassword());
+        this.trackDao = trackDao;
     }
 
     public String TRANSLATE_LINE_TO_KO(SubwayLine subwayLine) {
@@ -133,7 +94,7 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ResponseEntity<?> getUserProfile(Long userId) {
         ProfileResponseDto profileResponseDto = new ProfileResponseDto();
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        Profile profile = profileDao.getUserProfile(userId);
 
         profileResponseDto.setProfileUrl(profile.getUser().getProfileUrl());
         profileResponseDto.setNickName(profile.getUser().getNickname());
@@ -164,27 +125,20 @@ public class ProfileServiceImpl implements ProfileService {
         MyPageResponseDto myPageResponseDto = new MyPageResponseDto();
 
 //        사용자 정보 확인
-        Optional<User> user = userRepository.findById(userId);
-        if(user.isEmpty()) {
-            throw new RuntimeException("미등록 사용자");
-        }
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(userId);
 
-//        User 정보
-        myPageResponseDto.setNickName(user.get().getNickname());
-        myPageResponseDto.setEmail(user.get().getEmail());
-        myPageResponseDto.setEnable(user.get().isEnabled());
+        myPageResponseDto.setNickName(user.getNickname());
+        myPageResponseDto.setEmail(user.getEmail());
+        myPageResponseDto.setEnable(user.isEnabled());
         myPageResponseDto.setPassword("********");
         myPageResponseDto.setBlocked("미등록");
-
-//        Profile 정보
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
-
         myPageResponseDto.setProfileUrl(profile.getUser().getProfileUrl());
         myPageResponseDto.setName(profile.getName() == null ? "미등록" : profile.getName());
         myPageResponseDto.setPhoneNum(profile.getPhoneNum() == null ? "미등록" : profile.getPhoneNum());
         myPageResponseDto.setIntroduce(profile.getIntroduce() == null ? "등록된 소개 글이 없습니다." : profile.getIntroduce());
 
-        Optional<BankAccounts> bankAccounts = bankAccountsRepository.findBankAccountsByUser(user.get());
+        Optional<BankAccounts> bankAccounts = bankAccountsRepository.findBankAccountsByUser(user);
         if(bankAccounts.isEmpty()) {
             myPageResponseDto.setAccountInfo("미등록");
         } else {
@@ -251,9 +205,9 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> changeName(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        Profile profile = profileDao.getUserProfile(userId);
 
-        if(!CHECK_PASSWD(profile.getUser(), changeProfileRequestDto.getPassword())) {
+        if(!userDao.checkPassword(profile.getUser(), changeProfileRequestDto.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -262,16 +216,16 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         profile.setName(changeProfileRequestDto.getTarget());
-        profileRepository.save(profile);
+        profileDao.saveProfileEntity(profile);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> changePhoneNum(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        Profile profile = profileDao.getUserProfile(userId);
 
-        if(!CHECK_PASSWD(profile.getUser(), changeProfileRequestDto.getPassword())) {
+        if(!userDao.checkPassword(profile.getUser(), changeProfileRequestDto.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -280,7 +234,7 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         profile.setPhoneNum(changeProfileRequestDto.getTarget());
-        profileRepository.save(profile);
+        profileDao.saveProfileEntity(profile);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -315,25 +269,8 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> changePassword(Long userId, ChangePasswordRequestDto changePasswordRequestDto) {
-        Optional<User> user = userRepository.findById(userId);
-
-        if(user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        if(!passwordEncoder.matches(changePasswordRequestDto.getPassword(), user.get().getPassword())) {
-            return ResponseEntity.status(HttpStatus.LOCKED).build();
-        }
-
-        String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
-        if(!changePasswordRequestDto.getNewPassword().matches(passwordPattern)) {
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
-        }
-
-        User updatedUser = user.get();
-
-        updatedUser.setPassword(passwordEncoder.encode(changePasswordRequestDto.getNewPassword()));
-        userRepository.save(updatedUser);
+        User user = userDao.getUserEntity(userId);
+        userDao.changePassword(user, changePasswordRequestDto.getPassword());
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -341,78 +278,58 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ResponseEntity<?> changeIntroduce(Long userId,
                                              ChangeProfileNonPasswordRequestDto changeProfileNonPasswordRequestDto) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        Profile profile = profileDao.getUserProfile(userId);
 
         if(changeProfileNonPasswordRequestDto.getTarget().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         profile.setIntroduce(changeProfileNonPasswordRequestDto.getTarget());
-        profileRepository.save(profile);
+        profileDao.saveProfileEntity(profile);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> changeNickname(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
-        Optional<User> user = userRepository.findById(userId);
-
-        if(user.isEmpty()) {
-            throw new RuntimeException("USER NOT FOUND");
-        }
+        User user = userDao.getUserEntity(userId);
 
         if(changeProfileRequestDto.getTarget().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        if(!CHECK_PASSWD(user.get(), changeProfileRequestDto.getPassword())) {
+        if(!userDao.checkPassword(user, changeProfileRequestDto.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User updatedUser = user.get();
-        updatedUser.setNickname(changeProfileRequestDto.getTarget());
-
-        userRepository.save(updatedUser);
+        user.setNickname(changeProfileRequestDto.getTarget());
+        userDao.saveUserEntity(user);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> getMainPageInfo(Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-
-        if(user.isEmpty()) {
-            throw new RuntimeException("미등록 사용자");
-        }
+        User user = userDao.getUserEntity(userId);
 
         Long totalLiked = 0L;
-        Long newLikes = 0L;
+        long newLikes = 0L;
         Long totalView = 0L;
         Long credit = 0L;
 
-        List<Track> trackList = trackRepository.getAllByUser(user.get());
+        List<Track> trackList = trackDao.getUserAllTrack(user);
         for(Track track : trackList) {
             totalView += track.getViewCount();
-
-            List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
-            totalLiked += trackLikeList.size();
-
-            if(user.get().getLastAccessTime() != null) {
-                for(TrackLike like : trackLikeList) {
-                    if(like.getLikedDt().isAfter(user.get().getLastAccessTime())) {
-                        newLikes++;
-                    }
-                }
-            }
+            totalLiked += trackDao.trackLikeCount(track);
         }
 
-        Optional<Credit> creditInfo = creditRepository.findByUser(user.get());
+        Optional<Credit> creditInfo = creditRepository.findByUser(user);
 
         if(creditInfo.isPresent()) {
             credit = creditInfo.get().getAmount();
         }
 
-        boolean isIncreased = newLikes > 0;
+        boolean isIncreased = false;
 
         return ResponseEntity.status(HttpStatus.OK).body(MainInfoResponseDto.builder()
                 .totalView(totalView)
@@ -425,7 +342,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> getMyPageInfo(Long userId) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        Profile profile = profileDao.getUserProfile(userId);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일 a h시 m분");
         String formatDateTime = profile.getUser().getCreatedAt().format(formatter);
         return ResponseEntity.status(HttpStatus.OK).body(MyPageInfoResponseDto.builder()
@@ -439,7 +356,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> changeNearSubway(Long userId, ChangeNearSubwayRequestDto changeNearSubwayRequestDto) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        Profile profile = profileDao.getUserProfile(userId);
 
         if(changeNearSubwayRequestDto.getSubwayLine() == null || changeNearSubwayRequestDto.getStation().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -448,30 +365,28 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setSubwayLine(changeNearSubwayRequestDto.getSubwayLine());
         profile.setSubwayStation(changeNearSubwayRequestDto.getStation());
 
-        profileRepository.save(profile);
+        profileDao.saveProfileEntity(profile);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> changeAddress(Long userId, ChangeAddressRequestDto changeAddressRequestDto) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
-
         if(changeAddressRequestDto.getSeoulCountry() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        User user = profile.getUser();
+        User user = userDao.getUserEntity(userId);
         user.setCountry(changeAddressRequestDto.getSeoulCountry());
 
-        userRepository.save(user);
+        userDao.saveUserEntity(user);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> changeBirth(Long userId, ChangeBrithReqeustDto changeBrithReqeustDto) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        Profile profile = profileDao.getUserProfile(userId);
 
         String birth = changeBrithReqeustDto.getBirth();
         Pattern pattern = Pattern.compile("^\\d{8}$");
@@ -482,14 +397,14 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         profile.setBirth(birth);
-        profileRepository.save(profile);
+        profileDao.saveProfileEntity(profile);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> getInfoBoxInfo(Long userId) {
-        Profile profile = GET_PROFILE_BY_USER_ID(userId);
+        Profile profile = profileDao.getUserProfile(userId);
         Credit credit = creditRepository.getByUser(profile.getUser());
 
         return ResponseEntity.status(HttpStatus.OK).body(InfoBoxResponseDto.builder()

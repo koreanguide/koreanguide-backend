@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,14 +25,11 @@ import java.util.List;
 @Slf4j
 public class TrackServiceImpl implements TrackService {
     private final TrackDao trackDao;
-    private final PasswordEncoder passwordEncoder;
     private final ReviewRepository reviewRepository;
     private final UserDao userDao;
 
     @Autowired
-    public TrackServiceImpl(PasswordEncoder passwordEncoder, ReviewRepository reviewRepository,
-                            UserDao userDao, TrackDao trackDao) {
-        this.passwordEncoder = passwordEncoder;
+    public TrackServiceImpl(ReviewRepository reviewRepository, UserDao userDao, TrackDao trackDao) {
         this.reviewRepository = reviewRepository;
         this.userDao = userDao;
         this.trackDao = trackDao;
@@ -132,7 +128,7 @@ public class TrackServiceImpl implements TrackService {
     public ResponseEntity<?> removeTrack(Long userId, TrackRemoveRequestDto trackRemoveRequestDto) {
         User user = userDao.getUserEntity(userId);
 
-        if(!passwordEncoder.matches(trackRemoveRequestDto.getPassword(), user.getPassword())) {
+        if(!userDao.checkPassword(user, trackRemoveRequestDto.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
