@@ -18,4 +18,6 @@ public interface SignService {
     ResponseEntity<?> sendResetPasswordVerifyMail(String to) throws MessagingException;
 
     ResponseEntity<?> refreshToken(TokenRequestDto tokenRequestDto);
+
+    ResponseEntity<?> validateToken(String accessToken);
 }

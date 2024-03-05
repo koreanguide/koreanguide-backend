@@ -398,4 +398,13 @@ public class SignServiceImpl implements SignService {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public ResponseEntity<?> validateToken(String accessToken) {
+        if(!jwtTokenProvider.validateToken(accessToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }

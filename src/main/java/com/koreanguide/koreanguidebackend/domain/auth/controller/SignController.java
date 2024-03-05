@@ -86,6 +86,11 @@ public class SignController {
         return signService.refreshToken(tokenRequestDto);
     }
 
+    @PostMapping(value = "/token")
+    public ResponseEntity<?> validateToken(@RequestParam String accessToken) {
+        return signService.validateToken(accessToken);
+    }
+
     @GetMapping(value = "/exception")
     public void exceptionTest() throws RuntimeException{
         throw new RuntimeException("접근이 금지되었습니다.");
