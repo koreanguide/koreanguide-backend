@@ -2,13 +2,12 @@ package com.koreanguide.koreanguidebackend.domain.chat.service.Impl;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
+import com.koreanguide.koreanguidebackend.domain.chat.data.dao.ChatDao;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.CreateChatRoomRequestDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatListResponseDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatResponseDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatMessage;
 import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatRoom;
-import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatMessageRepository;
-import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatRoomRepository;
 import com.koreanguide.koreanguidebackend.domain.chat.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,26 +19,17 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class ChatServiceImpl implements ChatService {
-    private final ChatRoomRepository chatRoomRepository;
-    private final ChatMessageRepository chatMessageRepository;
     private final UserDao userDao;
+    private final ChatDao chatDao;
 
     @Autowired
-    public ChatServiceImpl(ChatRoomRepository chatRoomRepository, ChatMessageRepository chatMessageRepository,
-                           UserDao userDao) {
-        this.chatRoomRepository = chatRoomRepository;
-        this.chatMessageRepository = chatMessageRepository;
+    public ChatServiceImpl(UserDao userDao, ChatDao chatDao) {
         this.userDao = userDao;
-    }
-
-    @Override
-    public void saveChatRoom(ChatRoom chatRoom) {
-        chatRoomRepository.save(chatRoom);
+        this.chatDao = chatDao;
     }
 
     @Override
@@ -48,7 +38,7 @@ public class ChatServiceImpl implements ChatService {
         User recipient = userDao.getUserEntity(createChatRoomRequestDto.getRecipientId());
 
         String CHAT_ROOM_ID = UUID.randomUUID().toString();
-        chatRoomRepository.save(ChatRoom.builder()
+        chatDao.saveChatRoomEntity(ChatRoom.builder()
                 .roomId(CHAT_ROOM_ID)
                 .createdAt(LocalDateTime.now())
                 .sender(sender)
@@ -60,9 +50,8 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public ResponseEntity<List<ChatResponseDto>> getAllChattingList(String chatRoomId) {
-        ChatRoom chatRoom = chatRoomRepository.getChatRoomByRoomId(chatRoomId);
-
-        List<ChatMessage> chatMessageList = chatMessageRepository.findAllByChatRoom(chatRoom);
+        ChatRoom chatRoom = chatDao.getChatRoomEntity(chatRoomId);
+        List<ChatMessage> chatMessageList = chatDao.getChatMessageEntity(chatRoom);
         List<ChatResponseDto> chatResponseDtoList = new ArrayList<>();
 
         for(ChatMessage chatMessage : chatMessageList) {
@@ -83,11 +72,11 @@ public class ChatServiceImpl implements ChatService {
     public ResponseEntity<List<ChatListResponseDto>> getChatList(Long userId) {
         User user = userDao.getUserEntity(userId);
 
-        List<ChatRoom> chatRoomList = chatRoomRepository.findChatRoomBySenderOrRecipient(user, user);
+        List<ChatRoom> chatRoomList = chatDao.findUserChatRoomEntity(user);
         List<ChatListResponseDto> chatListResponseDtoList = new ArrayList<>();
 
         for(ChatRoom chatRoom : chatRoomList) {
-            List<ChatMessage> chatMessageList = chatMessageRepository.findAllByChatRoom(chatRoom);
+            List<ChatMessage> chatMessageList = chatDao.getChatMessageEntity(chatRoom);
             User targetUser = chatRoom.getSender() != chatRoom.getSender() ? user : chatRoom.getRecipient();
             ChatListResponseDto chatListResponseDto = new ChatListResponseDto();
             chatListResponseDto.setName(targetUser.getNickname());
@@ -110,13 +99,8 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public ResponseEntity<List<ChatResponseDto>> getChatMsg(String roomId, Pageable pageable) {
-        Optional<ChatRoom> chatRoom = chatRoomRepository.findChatRoomByRoomId(roomId);
-
-        if(chatRoom.isEmpty()) {
-            throw new RuntimeException("채팅방을 찾을 수 없음");
-        }
-
-        Page<ChatMessage> chatMessages = chatMessageRepository.findAllByChatRoomOrderByDateDesc(chatRoom.get(), pageable);
+        ChatRoom chatRoom = chatDao.getChatRoomEntity(roomId);
+        Page<ChatMessage> chatMessages = chatDao.getChatMessageEntityViaPageable(chatRoom, pageable);
         List<ChatResponseDto> chatResponseDtoList = new ArrayList<>();
 
         for(ChatMessage chatMessage : chatMessages.getContent()) {
@@ -129,10 +113,5 @@ public class ChatServiceImpl implements ChatService {
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(chatResponseDtoList);
-    }
-
-    @Override
-    public void saveChatMessage(ChatMessage chatMessage) {
-        chatMessageRepository.save(chatMessage);
     }
 }

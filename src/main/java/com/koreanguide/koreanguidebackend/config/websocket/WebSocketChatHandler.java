@@ -3,17 +3,14 @@ package com.koreanguide.koreanguidebackend.config.websocket;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
+import com.koreanguide.koreanguidebackend.domain.chat.data.dao.ChatDao;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.ChatMessageDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatResponseDto;
 import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatMessage;
 import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatRoom;
 import com.koreanguide.koreanguidebackend.domain.chat.data.enums.MessageType;
-import com.koreanguide.koreanguidebackend.domain.chat.data.repository.ChatRoomRepository;
-import com.koreanguide.koreanguidebackend.domain.chat.service.ChatService;
-import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
-import com.koreanguide.koreanguidebackend.domain.profile.repository.ProfileRepository;
+import com.koreanguide.koreanguidebackend.domain.track.data.dao.TrackDao;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
-import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -34,11 +31,9 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final Set<WebSocketSession> sessions = new HashSet<>();
     private final Map<String,Set<WebSocketSession>> chatRoomSessionMap = new HashMap<>();
-    private final ChatService chatService;
-    private final ChatRoomRepository chatRoomRepository;
     private final UserDao userDao;
-    private final ProfileRepository profileRepository;
-    private final TrackRepository trackRepository;
+    private final ChatDao chatDao;
+    private final TrackDao trackDao;
 
     // 연결 후
     @Override
@@ -72,48 +67,32 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
         }
 
         User user = userDao.getUserEntity(chatMessageDto.getSenderId());
-        Optional<ChatRoom> chatRoom = chatRoomRepository.findChatRoomByRoomId(chatMessageDto.getChatRoomId());
-
-        if(chatRoom.isEmpty()) {
-            throw new RuntimeException("미존재 채팅방");
-        }
+        ChatRoom chatRoom = chatDao.getChatRoomEntity(chatMessageDto.getChatRoomId());
 
         LocalDateTime CURRENT_TIME = LocalDateTime.now();
 
-        ChatMessage chatMessage = ChatMessage.builder()
+        chatDao.saveChatMessageEntity(ChatMessage.builder()
                     .user(user)
-                    .chatRoom(chatRoom.get())
+                    .chatRoom(chatRoom)
                     .message(chatMessageDto.getMessage())
                     .date(CURRENT_TIME)
-                .build();
-
-        chatService.saveChatMessage(chatMessage);
-
-        Optional<Profile> profile = profileRepository.findByUser(user);
+                .build());
 
         ChatResponseDto chatResponseDto = new ChatResponseDto();
         chatResponseDto.setName(user.getNickname());
         chatResponseDto.setSenderId(user.getId());
         chatResponseDto.setMessage(chatMessageDto.getMessage());
         chatResponseDto.setDate(CURRENT_TIME);
-
-        if(profile.isEmpty()) {
-            chatResponseDto.setProfileUrl("DEFAULT");
-        } else {
-            chatResponseDto.setProfileUrl(user.getProfileUrl());
-        }
+        chatResponseDto.setProfileUrl(user.getProfileUrl());
 
         if(chatMessageDto.isUseFunction() && chatMessageDto.isUseTrackFunction()) {
             chatResponseDto.setUseTrackFunction(true);
+            Track track = trackDao.getTrackEntity(chatMessageDto.getTargetTrackId());
 
-            Optional<Track> track = trackRepository.findById(chatMessageDto.getTargetTrackId());
-
-            if(track.isPresent()) {
-                chatResponseDto.setTrackTitle(track.get().getTrackTitle());
-                chatResponseDto.setTrackPrimaryUrl(track.get().getPrimaryImageUrl());
-                chatResponseDto.setTrackId(track.get().getId());
-                chatResponseDto.setTrackPreview(track.get().getTrackPreview());
-            }
+            chatResponseDto.setTrackTitle(track.getTrackTitle());
+            chatResponseDto.setTrackPrimaryUrl(track.getPrimaryImageUrl());
+            chatResponseDto.setTrackId(track.getId());
+            chatResponseDto.setTrackPreview(track.getTrackPreview());
         }
 
         sendMessageToChatRoom(chatResponseDto, chatRoomSession);
