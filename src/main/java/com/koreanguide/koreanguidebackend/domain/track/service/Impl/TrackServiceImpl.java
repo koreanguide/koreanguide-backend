@@ -4,20 +4,15 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.review.data.entity.Review;
 import com.koreanguide.koreanguidebackend.domain.review.data.repository.ReviewRepository;
+import com.koreanguide.koreanguidebackend.domain.track.data.dao.TrackDao;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.request.*;
 import com.koreanguide.koreanguidebackend.domain.track.data.dto.response.*;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackImage;
-import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackLike;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackTag;
-import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackImageRepository;
-import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackLikeRepository;
-import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackRepository;
-import com.koreanguide.koreanguidebackend.domain.track.data.repository.TrackTagRepository;
 import com.koreanguide.koreanguidebackend.domain.track.service.TrackService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,52 +21,22 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Slf4j
 public class TrackServiceImpl implements TrackService {
-    private final TrackRepository trackRepository;
-    private final TrackImageRepository trackImageRepository;
-    private final TrackTagRepository trackTagRepository;
-    private final TrackLikeRepository trackLikeRepository;
+    private final TrackDao trackDao;
     private final PasswordEncoder passwordEncoder;
     private final ReviewRepository reviewRepository;
     private final UserDao userDao;
 
     @Autowired
-    public TrackServiceImpl(TrackRepository trackRepository, TrackImageRepository trackImageRepository,
-                            TrackTagRepository trackTagRepository, TrackLikeRepository trackLikeRepository,
-                            PasswordEncoder passwordEncoder, ReviewRepository reviewRepository,
-                            UserDao userDao) {
-        this.trackRepository = trackRepository;
-        this.trackImageRepository = trackImageRepository;
-        this.trackTagRepository = trackTagRepository;
-        this.trackLikeRepository = trackLikeRepository;
+    public TrackServiceImpl(PasswordEncoder passwordEncoder, ReviewRepository reviewRepository,
+                            UserDao userDao, TrackDao trackDao) {
         this.passwordEncoder = passwordEncoder;
         this.reviewRepository = reviewRepository;
         this.userDao = userDao;
-    }
-
-    public TrackInfoResponseDto GET_TRACK(User user, Long trackId) {
-        Optional<Track> track = trackRepository.findById(trackId);
-        TrackInfoResponseDto trackInfoResponseDto = new TrackInfoResponseDto();
-
-        if(track.isEmpty()) {
-            throw new RuntimeException("트랙을 찾을 수 없음");
-        }
-
-        if(track.get().isBlocked()) {
-            trackInfoResponseDto.setUseAble(false);
-        } else {
-            trackInfoResponseDto.setVisible(true);
-        }
-
-        trackInfoResponseDto.setAdmin(track.get().getUser().equals(user));
-        trackInfoResponseDto.setVisible(track.get().isVisible());
-        trackInfoResponseDto.setTrack(track.get());
-
-        return trackInfoResponseDto;
+        this.trackDao = trackDao;
     }
 
     @Override
@@ -79,17 +44,16 @@ public class TrackServiceImpl implements TrackService {
         User user = userDao.getUserEntity(userId);
 
         List<TrackMainResponseDto> trackMainResponseDtoList = new ArrayList<>();
-        List<Track> trackList = trackRepository.getAllByUser(user);
+        List<Track> trackList = trackDao.getUserAllTrack(user);
 
         for(Track track : trackList) {
             List<String> tagList = new ArrayList<>();
-            List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
+
+            List<TrackTag> trackTagList = trackDao.getTrackTagEntityViaEntity(track);
+
             for(TrackTag trackTag : trackTagList) {
                 tagList.add(trackTag.getTagName());
             }
-
-            List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
-
 
             trackMainResponseDtoList.add(TrackMainResponseDto.builder()
                             .trackId(track.getId())
@@ -98,7 +62,7 @@ public class TrackServiceImpl implements TrackService {
                             .primaryImageUrl(track.getPrimaryImageUrl())
                             .tags(tagList)
                             .view(track.getViewCount())
-                            .like((long) trackLikeList.size())
+                            .like(trackDao.trackLikeCount(track))
                             .star(track.isStar())
                     .build());
         }
@@ -138,28 +102,9 @@ public class TrackServiceImpl implements TrackService {
                 .updatedAt(CURRENT_TIME)
                 .build();
 
-        trackRepository.save(track);
-
-        for(TrackTagApplyRequestDto trackTagApplyRequestDto : trackApplyRequestDto.getTags()) {
-            TrackTag trackTag = TrackTag.builder()
-                    .track(track)
-                    .tagName(trackTagApplyRequestDto.getTagName())
-                    .uploadedDt(CURRENT_TIME)
-                    .build();
-
-            trackTagRepository.save(trackTag);
-        }
-
-        for(TrackImageApplyRequestDto trackImageApplyRequestDto : trackApplyRequestDto.getImages()) {
-            TrackImage trackImage = TrackImage.builder()
-                    .imageUrl(trackImageApplyRequestDto.getImageUrl())
-                    .useAble(true)
-                    .uploadedDt(CURRENT_TIME)
-                    .track(track)
-                    .build();
-
-            trackImageRepository.save(trackImage);
-        }
+        trackDao.saveTrack(track);
+        trackDao.updateTrackTag(track, trackApplyRequestDto.getTags());
+        trackDao.updateTrackImage(track, trackApplyRequestDto.getImages());
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -167,21 +112,8 @@ public class TrackServiceImpl implements TrackService {
     @Override
     public ResponseEntity<?> updateTrack(Long userId, TrackUpdateRequestDto trackUpdateRequestDto) {
         LocalDateTime CURRENT_TIME = LocalDateTime.now();
-        TrackInfoResponseDto trackInfoResponseDto = GET_TRACK(userDao.getUserEntity(userId),
-                trackUpdateRequestDto.getTrackId());
 
-        if(!trackInfoResponseDto.isAdmin()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        Track track = trackInfoResponseDto.getTrack();
-
-        List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
-        trackTagRepository.deleteAll(trackTagList);
-
-        List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
-        trackImageRepository.deleteAll(trackImageList);
-
+        Track track = trackDao.getTrackEntity(trackUpdateRequestDto.getTrackId());
         track.setTrackTitle(trackUpdateRequestDto.getTrackTitle());
         track.setTrackContent(trackUpdateRequestDto.getTrackContent());
         track.setTrackPreview(trackUpdateRequestDto.getTrackPreview());
@@ -189,28 +121,9 @@ public class TrackServiceImpl implements TrackService {
         track.setAutoTranslate(trackUpdateRequestDto.isUseAutoTranslate());
         track.setUpdatedAt(CURRENT_TIME);
 
-        trackRepository.save(track);
-
-        for(TrackTagApplyRequestDto trackTagApplyRequestDto : trackUpdateRequestDto.getTags()) {
-            TrackTag trackTag = TrackTag.builder()
-                    .track(track)
-                    .tagName(trackTagApplyRequestDto.getTagName())
-                    .uploadedDt(CURRENT_TIME)
-                    .build();
-
-            trackTagRepository.save(trackTag);
-        }
-
-        for(TrackImageApplyRequestDto trackImageApplyRequestDto : trackUpdateRequestDto.getImages()) {
-            TrackImage trackImage = TrackImage.builder()
-                    .imageUrl(trackImageApplyRequestDto.getImageUrl())
-                    .useAble(true)
-                    .uploadedDt(CURRENT_TIME)
-                    .track(track)
-                    .build();
-
-            trackImageRepository.save(trackImage);
-        }
+        trackDao.saveTrack(track);
+        trackDao.updateTrackTag(track, trackUpdateRequestDto.getTags());
+        trackDao.updateTrackImage(track, trackUpdateRequestDto.getImages());
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -219,33 +132,11 @@ public class TrackServiceImpl implements TrackService {
     public ResponseEntity<?> removeTrack(Long userId, TrackRemoveRequestDto trackRemoveRequestDto) {
         User user = userDao.getUserEntity(userId);
 
-        Optional<Track> track = trackRepository.findById(trackRemoveRequestDto.getTrackId());
-
-        if(track.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-
-        if(!track.get().getUser().equals(user)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         if(!passwordEncoder.matches(trackRemoveRequestDto.getPassword(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track.get());
-        trackLikeRepository.deleteAll(trackLikeList);
-
-        List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track.get());
-        trackTagRepository.deleteAll(trackTagList);
-
-        List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track.get());
-        trackImageRepository.deleteAll(trackImageList);
-
-        List<Review> reviewList = reviewRepository.getAllByTrack(track.get());
-        reviewRepository.deleteAll(reviewList);
-
-        trackRepository.delete(track.get());
+        trackDao.deleteTrack(trackRemoveRequestDto.getTrackId(), userId);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -253,31 +144,30 @@ public class TrackServiceImpl implements TrackService {
     @Override
     public ResponseEntity<?> setPrimaryTrack(Long userId, Long trackId) {
         User user = userDao.getUserEntity(userId);
-        List<Track> trackList = trackRepository.getAllByUser(user);
+        List<Track> trackList = trackDao.getUserAllTrack(user);
 
         for(Track track : trackList) {
             if(track.isStar()) {
                 track.setStar(false);
-                trackRepository.save(track);
+                trackDao.saveTrack(track);
             }
         }
 
-        Track track = trackRepository.getById(trackId);
+        Track track = trackDao.getTrackEntity(trackId);
         track.setStar(true);
 
-        trackRepository.save(track);
+        trackDao.saveTrack(track);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
     public ResponseEntity<?> getTrackDeleteInfo(Long userId, Long trackId) {
-        Track track = trackRepository.getById(trackId);
+        Track track = trackDao.getTrackEntity(trackId);
         List<Review> reviewList = reviewRepository.getAllByTrack(track);
-        List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
 
         return ResponseEntity.status(HttpStatus.OK).body(TrackDeleteInfoResponseDto.builder()
-                        .like((long) trackLikeList.size())
+                        .like(trackDao.trackLikeCount(track))
                         .view(track.getViewCount())
                         .review((long) reviewList.size())
                 .build());
@@ -285,7 +175,7 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     public ResponseEntity<?> getTrackEditInfo(Long userId, Long trackId) {
-        Track track = trackRepository.getById(trackId);
+        Track track = trackDao.getTrackEntity(trackId);
 
         TrackEditInfoResponseDto trackEditInfoResponseDto = new TrackEditInfoResponseDto();
 
@@ -294,7 +184,7 @@ public class TrackServiceImpl implements TrackService {
         trackEditInfoResponseDto.setPrimaryImage(track.getPrimaryImageUrl());
 
         List<String> ADDITIONAL_IMAGE_LIST = new ArrayList<>();
-        List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
+        List<TrackImage> trackImageList = trackDao.getTrackImageEntityViaEntity(track);
 
         for(TrackImage trackImage : trackImageList) {
             ADDITIONAL_IMAGE_LIST.add(trackImage.getImageUrl());
@@ -305,7 +195,7 @@ public class TrackServiceImpl implements TrackService {
         trackEditInfoResponseDto.setPreview(track.getTrackPreview());
 
         List<String> TAGS_LIST = new ArrayList<>();
-        List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
+        List<TrackTag> trackTagList = trackDao.getTrackTagEntityViaEntity(track);
 
         for(TrackTag trackTag : trackTagList) {
             TAGS_LIST.add(trackTag.getTagName());
@@ -321,7 +211,9 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     public ResponseEntity<?> getTrackInfo(Long userId, Long trackId) {
-        Track track = trackRepository.getById(trackId);
+        Track track = trackDao.getTrackEntity(trackId);
+        List<TrackTag> trackTagList = trackDao.getTrackTagEntityViaEntity(track);
+        List<TrackImage> trackImageList = trackDao.getTrackImageEntityViaEntity(track);
 
         TrackResponseDto trackResponseDto = new TrackResponseDto();
         trackResponseDto.setTrackId(track.getId());
@@ -329,27 +221,19 @@ public class TrackServiceImpl implements TrackService {
         trackResponseDto.setPreview(track.getTrackPreview());
 
         List<String> TAGS_LIST = new ArrayList<>();
-        List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
-
         for(TrackTag trackTag : trackTagList) {
             TAGS_LIST.add(trackTag.getTagName());
         }
 
-        trackResponseDto.setTags(TAGS_LIST);
-
         List<String> ADDITIONAL_IMAGE_LIST = new ArrayList<>();
-        List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
-
         for(TrackImage trackImage : trackImageList) {
             ADDITIONAL_IMAGE_LIST.add(trackImage.getImageUrl());
         }
 
+        trackResponseDto.setTags(TAGS_LIST);
         trackResponseDto.setAdditionalImage(ADDITIONAL_IMAGE_LIST);
-
         trackResponseDto.setContent(track.getTrackContent());
-
-        List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
-        trackResponseDto.setLike((long) trackLikeList.size());
+        trackResponseDto.setLike(trackDao.trackLikeCount(track));
         trackResponseDto.setView(track.getViewCount());
 
         return ResponseEntity.status(HttpStatus.OK).body(trackResponseDto);
@@ -357,20 +241,16 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     public ResponseEntity<?> getTopTrackUsedByMainPage() {
-        PageRequest pageRequest = PageRequest.of(0, 3);
-        List<Track> topTracks = trackRepository.findTop3ByOrderByLikesAndViewCountAndCreatedAtDesc(pageRequest);
-
+        List<Track> topTracks = trackDao.getTopTrackList();
         List<TopTrackResponseDto> topTrackResponseDtoList = new ArrayList<>();
 
         for(Track track : topTracks) {
-            List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
+            List<TrackTag> trackTagList = trackDao.getTrackTagEntityViaEntity(track);
             List<String> TAGS_LIST = new ArrayList<>();
 
             for(TrackTag trackTag : trackTagList) {
                 TAGS_LIST.add(trackTag.getTagName());
             }
-
-            List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
 
             topTrackResponseDtoList.add(TopTrackResponseDto.builder()
                             .trackId(track.getId())
@@ -379,7 +259,7 @@ public class TrackServiceImpl implements TrackService {
                             .profileUrl(track.getUser().getProfileUrl())
                             .nickname(track.getUser().getNickname())
                             .view(track.getViewCount())
-                            .like((long) trackLikeList.size())
+                            .like(trackDao.trackLikeCount(track))
                             .tags(TAGS_LIST)
                     .build());
         }

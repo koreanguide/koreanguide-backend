@@ -20,10 +20,7 @@ public class TrackImage {
     private String imageUrl;
 
     @Column(nullable = false)
-    private boolean useAble;
-
-    @Column(nullable = false)
-    private LocalDateTime uploadedDt;
+    private boolean useAble = true;
 
     @Column
     private LocalDateTime disableDt;

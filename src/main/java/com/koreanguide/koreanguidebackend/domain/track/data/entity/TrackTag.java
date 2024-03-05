@@ -20,9 +20,6 @@ public class TrackTag {
     @Column(nullable = false)
     private String tagName;
 
-    @Column(nullable = false)
-    private LocalDateTime uploadedDt;
-
     @ManyToOne
     @JoinColumn(name = "track_id")
     private Track track;
