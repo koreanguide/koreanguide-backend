@@ -10,7 +10,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class CreditResponseDto {
-    private boolean success;
-    private String msg;
     private Long amount;
 }

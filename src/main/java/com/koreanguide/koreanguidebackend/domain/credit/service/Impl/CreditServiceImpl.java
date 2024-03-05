@@ -38,8 +38,6 @@ public class CreditServiceImpl implements CreditService {
         Credit credit = creditDao.getUserCreditEntity(user);
 
         return ResponseEntity.status(HttpStatus.OK).body(CreditResponseDto.builder()
-                        .success(true)
-                        .msg("정상 처리")
                         .amount(credit.getAmount())
                 .build());
     }
@@ -110,8 +108,6 @@ public class CreditServiceImpl implements CreditService {
                 .build());
 
         return ResponseEntity.status(HttpStatus.OK).body(CreditResponseDto.builder()
-                        .success(true)
-                        .msg("정상 처리")
                         .amount(credit.getAmount())
                 .build());
     }
@@ -123,9 +119,7 @@ public class CreditServiceImpl implements CreditService {
         Credit credit = creditDao.getUserCreditEntity(user);
 
         if(credit.getAmount() - transactionCreditRequestDto.getAmount() < 0) {
-            return ResponseEntity.status(HttpStatus.OK).body(CreditResponseDto.builder()
-                            .success(false)
-                            .msg("잔액 부족")
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(CreditResponseDto.builder()
                             .amount(credit.getAmount())
                     .build());
         } else {
@@ -143,8 +137,6 @@ public class CreditServiceImpl implements CreditService {
                     .build());
 
             return ResponseEntity.status(HttpStatus.OK).body(CreditResponseDto.builder()
-                    .success(true)
-                    .msg("정상 처리")
                     .amount(credit.getAmount())
                     .build());
         }
