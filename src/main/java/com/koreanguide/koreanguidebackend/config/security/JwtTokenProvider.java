@@ -84,22 +84,6 @@ public class JwtTokenProvider {
         return user.getId();
     }
 
-    public String refreshToken(String refreshToken, String email) {
-        log.info("JwtTokenProvider / refreshToken(): 리프레시 토큰으로 액세스 토큰 재발급 시작");
-
-        if (validateToken(refreshToken)) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            List<String> roles = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toList());
-
-            return createAccessToken(email, roles);
-        } else {
-            log.error("JwtTokenProvider / refreshToken(): 리프레시 토큰이 유효하지 않음");
-            throw new RuntimeException("Refresh Token이 유효하지 않습니다.");
-        }
-    }
-
 //    HTTP Header에서 Token 추출
     public String resolveToken(HttpServletRequest request) {
         log.info("JwtTokenProvider / resolveToken(): HTTP 헤더에서 Token 값 추출");

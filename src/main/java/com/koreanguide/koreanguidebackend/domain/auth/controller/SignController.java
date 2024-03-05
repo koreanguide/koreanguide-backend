@@ -89,9 +89,7 @@ public class SignController {
 
     @PostMapping(value = "/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody TokenRequestDto tokenRequestDto){
-        String accessToken = jwtTokenProvider.refreshToken(tokenRequestDto.getRefreshToken(),
-                jwtTokenProvider.getUserEmail(tokenRequestDto.getRefreshToken()));
-        return ResponseEntity.ok(new TokenResponseDto(accessToken));
+        return signService.refreshToken(tokenRequestDto);
     }
 
     @GetMapping(value = "/exception")

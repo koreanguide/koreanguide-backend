@@ -3,9 +3,11 @@ package com.koreanguide.koreanguidebackend.domain.auth.service.impl;
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.ResetPasswordRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpRequestDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.TokenRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.TokenResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserRole;
@@ -22,6 +24,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
@@ -32,6 +37,7 @@ import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -46,6 +52,7 @@ public class SignServiceImpl implements SignService {
     private final JavaMailSender mailSender;
     private final RedisTemplate<String, String> redisTemplate;
     private SpringTemplateEngine springTemplateEngine;
+    private final UserDetailsService userDetailsService;
 
     @Autowired
     public SignServiceImpl(
@@ -55,7 +62,8 @@ public class SignServiceImpl implements SignService {
             PasswordEncoder passwordEncoder,
             JavaMailSender mailSender,
             RedisTemplate<String, String> redisTemplate,
-            SpringTemplateEngine springTemplateEngine
+            SpringTemplateEngine springTemplateEngine,
+            UserDetailsService userDetailsService
             ) {
         this.userRepository = userRepository;
         this.creditRepository = creditRepository;
@@ -64,6 +72,7 @@ public class SignServiceImpl implements SignService {
         this.mailSender = mailSender;
         this.redisTemplate = redisTemplate;
         this.springTemplateEngine = springTemplateEngine;
+        this.userDetailsService = userDetailsService;
     }
 
     private String generateAccessToken(String email, List<String> roles) {
@@ -250,10 +259,16 @@ public class SignServiceImpl implements SignService {
 
         userRepository.save(updatedUser);
 
+        String GENERATED_ACCESS_TOKEN = generateAccessToken(user.get().getEmail(), user.get().getRoles());
+        String GENERATED_REFRESH_TOKEN = generateRefreshToken(user.get().getEmail());
+
+        String key = "REFRESH_TOKEN:" + user.get().getEmail();
+        redisTemplate.opsForValue().set(key, GENERATED_REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
+
         return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
                         .isGuide(user.get().getUserRole().equals(UserRole.GUIDE))
-                        .accessToken(generateAccessToken(user.get().getEmail(), user.get().getRoles()))
-                        .refreshToken(generateRefreshToken(user.get().getEmail()))
+                        .accessToken(GENERATED_ACCESS_TOKEN)
+                        .refreshToken(GENERATED_REFRESH_TOKEN)
                         .name(user.get().getNickname())
                         .email(user.get().getEmail())
                         .msg("로그인 성공")
@@ -354,5 +369,37 @@ public class SignServiceImpl implements SignService {
                 .en("A password reset authentication email has been sent successfully.")
                 .ko("비밀번호 재설정 인증 이메일이 정상적으로 발송되었습니다.")
                 .build());
+    }
+
+    @Override
+    public ResponseEntity<?> refreshToken(TokenRequestDto tokenRequestDto) {
+        if(!jwtTokenProvider.validateToken(tokenRequestDto.getRefreshToken())) {
+            throw new RuntimeException("유효하지 않은 Refresh Token");
+        }
+
+        String USER_EMAIL = jwtTokenProvider.getUserEmail(tokenRequestDto.getRefreshToken());
+
+        if(!tokenRequestDto.getRefreshToken().equals(redisTemplate.opsForValue().get("REFRESH_TOKEN:" + USER_EMAIL))) {
+            throw new RuntimeException("유효하지 않은 Refresh Token");
+        }
+
+        try {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(USER_EMAIL);
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+
+            String REFRESH_TOKEN = jwtTokenProvider.createRefreshToken(userDetails.getUsername());
+            String ACCESS_TOKEN = jwtTokenProvider.createAccessToken(userDetails.getUsername(), roles);
+            String key = "REFRESH_TOKEN:" + userDetails.getUsername();
+            redisTemplate.opsForValue().set(key, REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
+
+            return ResponseEntity.status(HttpStatus.OK).body(TokenResponseDto.builder()
+                    .accessToken(ACCESS_TOKEN)
+                    .refreshToken(REFRESH_TOKEN)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
