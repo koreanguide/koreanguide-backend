@@ -1,4 +1,4 @@
-package com.koreanguide.koreanguidebackend.domain.gpt.data;
+package com.koreanguide.koreanguidebackend.domain.assistant.data.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AssistantResponseDto {
+public class AssistantRequestDto {
     private String msg;
 }
