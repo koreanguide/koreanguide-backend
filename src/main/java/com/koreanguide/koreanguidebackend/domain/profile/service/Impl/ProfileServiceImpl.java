@@ -281,7 +281,7 @@ public class ProfileServiceImpl implements ProfileService {
         User user = userDao.getUserEntity(userId);
         Profile profile = profileDao.getUserProfile(user);
 
-        if(changeProfileNonPasswordRequestDto.getTarget().isBlank()) {
+        if(changeProfileNonPasswordRequestDto.getTarget().isBlank() && changeProfileNonPasswordRequestDto.getTarget().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
