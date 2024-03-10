@@ -94,25 +94,46 @@ public class ProfileServiceImpl implements ProfileService {
         User user = userDao.getUserEntity(userId);
         Profile profile = profileDao.getUserProfile(user);
 
-        profileResponseDto.setProfileUrl(profile.getUser().getProfileUrl());
-        profileResponseDto.setNickName(profile.getUser().getNickname());
-        profileResponseDto.setIntroduce(profile.getIntroduce());
+        profileResponseDto.setProfileUrl(user.getProfileUrl());
+        profileResponseDto.setNickName(user.getNickname());
+
+        if(profile.getIntroduce() == null || profile.getIntroduce().isEmpty()) {
+            profileResponseDto.setIntroduce("등록된 소개 글이 없습니다.");
+        } else {
+            profileResponseDto.setIntroduce(profile.getIntroduce());
+        }
+
         profileResponseDto.setFirstLang(profile.getFirstLang().equals(Language.KOREAN) ? "한국어" : "영어");
         profileResponseDto.setSecondLang(profile.getSecondLang().equals(Language.ENGLISH) ? "영어" : "한국어");
-        profileResponseDto.setNearSubway(TRANSLATE_LINE_TO_KO(profile.getSubwayLine()) + " " + profile.getSubwayStation());
+
+        if(profile.getSubwayLine() == null || profile.getSubwayStation().isEmpty()) {
+            profileResponseDto.setNearSubway("미등록");
+        } else {
+            profileResponseDto.setNearSubway(TRANSLATE_LINE_TO_KO(profile.getSubwayLine()) + " " + profile.getSubwayStation());
+        }
 
         String birthFormat = "yyyy년 M월 dd일";
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        try {
-            Date birth = sdf.parse(profile.getBirth());
-            sdf.applyPattern(birthFormat);
-            String newBirthFormat = sdf.format(birth);
-            profileResponseDto.setBirth(newBirthFormat);
-        } catch (ParseException e) {
-            profileResponseDto.setBirth("표시할 수 없음");
+
+        if(profile.getBirth() == null) {
+            profileResponseDto.setBirth("미등록");
+        } else {
+            try {
+                Date birth = sdf.parse(profile.getBirth());
+                sdf.applyPattern(birthFormat);
+                String newBirthFormat = sdf.format(birth);
+                profileResponseDto.setBirth(newBirthFormat);
+            } catch (ParseException e) {
+                profileResponseDto.setBirth("표시할 수 없음");
+            }
         }
 
-        profileResponseDto.setSubwayLine(profile.getSubwayLine());
+        if(profile.getSubwayLine() == null) {
+            profileResponseDto.setSubwayLine(null);
+        } else {
+            profileResponseDto.setSubwayLine(profile.getSubwayLine());
+        }
+
         profileResponseDto.setAddress(profile.getUser().getCountry());
 
         return ResponseEntity.status(HttpStatus.OK).body(profileResponseDto);
