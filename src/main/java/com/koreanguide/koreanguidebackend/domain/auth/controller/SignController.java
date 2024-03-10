@@ -4,6 +4,9 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.*;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.VerifyType;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
+@Api(tags = {"Auth API"})
 @RestController
 @RequestMapping("/api/v1")
 public class SignController {
@@ -26,11 +30,13 @@ public class SignController {
         this.signService = signService;
     }
 
+    @ApiOperation(value = "비밀번호 재설정 이메일 인증 번호 요청")
     @PostMapping("/verify/request/pw")
     public ResponseEntity<?> requestResetPasswordVerifyEmail(@RequestBody ValidateEmailRequestDto validateEmailRequestDto) throws MessagingException {
         return signService.sendResetPasswordVerifyMail(validateEmailRequestDto.getEmail());
     }
 
+    @ApiOperation(value = "비밀번호 재설정 이메일 인증 번호 확인")
     @PostMapping("/verify/validate/pw")
     public ResponseEntity<?> validateResetPasswordEmail(@RequestBody ValidateRequestDto validateRequestDto) {
         if (signService.validateAuthKey(VerifyType.RESET_PASSWORD, validateRequestDto.getEmail(), validateRequestDto.getKey())) {
@@ -44,16 +50,19 @@ public class SignController {
         }
     }
 
+    @ApiOperation(value = "비밀번호 재설정")
     @PutMapping("/reset/password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequestDto resetPasswordRequestDto) {
         return signService.resetPassword(resetPasswordRequestDto);
     }
 
+    @ApiOperation(value = "회원가입 이메일 인증 번호 요청")
     @PostMapping("/verify/request")
     public ResponseEntity<?> requestEmailAuth(@RequestBody ValidateEmailRequestDto validateEmailRequestDto) throws MessagingException {
         return signService.sendVerifyMail(validateEmailRequestDto.getEmail());
     }
 
+    @ApiOperation(value = "회원가입 이메일 인증 번호 확인")
     @PostMapping("/verify/validate")
     public ResponseEntity<?> validateEmail(@RequestBody ValidateRequestDto validateRequestDto) {
         if (signService.validateAuthKey(VerifyType.SIGNUP, validateRequestDto.getEmail(), validateRequestDto.getKey())) {
@@ -67,6 +76,7 @@ public class SignController {
         }
     }
 
+    @ApiOperation(value = "회원가입")
     @PostMapping(value = "/signup")
     public ResponseEntity<?> signUp(@RequestBody SignUpRequestDto signUpRequestDto) {
         if (!signService.validateAuthKey(VerifyType.SIGNUP, signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey())) {
@@ -76,21 +86,25 @@ public class SignController {
         return signService.signUp(signUpRequestDto);
     }
 
+    @ApiOperation(value = "로그인")
     @PostMapping(value = "/signin")
     public ResponseEntity<?> signIn(@RequestBody SignInRequestDto signInRequestDto) throws RuntimeException {
         return signService.signIn(signInRequestDto);
     }
 
+    @ApiOperation(value = "Refresh Token을 이용해 Access Token 재발급")
     @PostMapping(value = "/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody TokenRequestDto tokenRequestDto){
         return signService.refreshToken(tokenRequestDto);
     }
 
+    @ApiOperation(value = "Access Token 유효성 검증")
     @PostMapping(value = "/token")
-    public ResponseEntity<?> validateToken(@RequestParam String accessToken) {
-        return signService.validateToken(accessToken);
+    public ResponseEntity<?> validateToken(@RequestBody TokenRequestDto tokenRequestDto) {
+        return signService.validateToken(tokenRequestDto);
     }
 
+    @ApiOperation(value = "Refresh Token을 이용해 Access Token 재발급")
     @GetMapping(value = "/exception")
     public void exceptionTest() throws RuntimeException{
         throw new RuntimeException("접근이 금지되었습니다.");

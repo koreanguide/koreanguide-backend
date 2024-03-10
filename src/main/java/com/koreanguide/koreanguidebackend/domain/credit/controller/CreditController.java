@@ -8,8 +8,10 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.Credit
 import com.koreanguide.koreanguidebackend.domain.credit.data.dto.response.CreditReturningRequestResponseDto;
 import com.koreanguide.koreanguidebackend.domain.credit.service.AccountService;
 import com.koreanguide.koreanguidebackend.domain.credit.service.CreditService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
+@Api(tags = {"Credit API"})
 @RestController
 @RequestMapping("/api/v1/credit")
 public class CreditController {
@@ -32,6 +35,7 @@ public class CreditController {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
+    @ApiOperation(value = "크레딧 환급 요청")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
@@ -43,6 +47,7 @@ public class CreditController {
                 jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")), amount);
     }
 
+    @ApiOperation(value = "크레딧 환급 요청 내역 조회")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
@@ -53,6 +58,7 @@ public class CreditController {
                 jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
     }
 
+    @ApiOperation(value = "최근 크레딧 환급 요청 정보 조회")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
@@ -63,6 +69,7 @@ public class CreditController {
                 jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
     }
 
+    @ApiOperation(value = "은행 정보 등록")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
@@ -75,6 +82,7 @@ public class CreditController {
                 bankAccountApplyRequestDto);
     }
 
+    @ApiOperation(value = "크레딧 사용 내역 조회")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
@@ -84,6 +92,7 @@ public class CreditController {
         return creditService.getCreditHistory(jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
     }
 
+    @ApiOperation(value = "은행 정보 삭제")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
@@ -94,6 +103,7 @@ public class CreditController {
                 jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
     }
 
+    @ApiOperation(value = "은행 정보 조회")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
@@ -103,6 +113,7 @@ public class CreditController {
         return accountService.getBankAccount(jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
     }
 
+    @ApiOperation(value = "보유 크레딧 조회")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
@@ -112,6 +123,7 @@ public class CreditController {
         return creditService.checkBalance(jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
     }
 
+    @ApiOperation(value = "크레딧 출금")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")
@@ -124,6 +136,7 @@ public class CreditController {
                 transactionCreditRequestDto);
     }
 
+    @ApiOperation(value = "크레딧 입금")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
                     dataType = "String", paramType = "header")

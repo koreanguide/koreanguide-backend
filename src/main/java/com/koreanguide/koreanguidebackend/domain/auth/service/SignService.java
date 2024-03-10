@@ -16,8 +16,6 @@ public interface SignService {
     ResponseEntity<?> signIn(SignInRequestDto signInRequestDto);
     ResponseEntity<?> resetPassword(ResetPasswordRequestDto resetPasswordRequestDto);
     ResponseEntity<?> sendResetPasswordVerifyMail(String to) throws MessagingException;
-
     ResponseEntity<?> refreshToken(TokenRequestDto tokenRequestDto);
-
-    ResponseEntity<?> validateToken(String accessToken);
+    ResponseEntity<?> validateToken(TokenRequestDto tokenRequestDto);
 }

@@ -217,6 +217,7 @@ public class SignServiceImpl implements SignService {
                 .userRole(signUpRequestDto.getUserRole())
                 .state(KoreaState.SEOUL)
                 .country(signUpRequestDto.getCountry())
+                .profileUrl("DEFAULT")
                 .password(passwordEncoder.encode(signUpRequestDto.getPassword()))
                 .roles(Collections.singletonList("ROLE_USER"))
                 .createdAt(LocalDateTime.now())
@@ -400,8 +401,8 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
-    public ResponseEntity<?> validateToken(String accessToken) {
-        if(!jwtTokenProvider.validateToken(accessToken)) {
+    public ResponseEntity<?> validateToken(TokenRequestDto tokenRequestDto) {
+        if(!jwtTokenProvider.validateToken(tokenRequestDto.getRefreshToken())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
