@@ -4,14 +4,15 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.ResetPass
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignUpRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.TokenRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.enums.VerifyType;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
+import com.koreanguide.koreanguidebackend.domain.mail.data.enums.MailType;
 import org.springframework.http.ResponseEntity;
 
 import javax.mail.MessagingException;
 
 public interface SignService {
+    ResponseEntity<SignAlertResponseDto> validateKey(MailType mailType, String targetEmail, String key);
     ResponseEntity<?> sendVerifyMail(String to) throws MessagingException;
-    boolean validateAuthKey(VerifyType verifyType, String email, String inputKey);
     ResponseEntity<?> signUp(SignUpRequestDto signUpRequestDto);
     ResponseEntity<?> signIn(SignInRequestDto signInRequestDto);
     ResponseEntity<?> resetPassword(ResetPasswordRequestDto resetPasswordRequestDto);

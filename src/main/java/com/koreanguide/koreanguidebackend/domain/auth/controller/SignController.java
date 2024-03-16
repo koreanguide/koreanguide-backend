@@ -2,11 +2,10 @@ package com.koreanguide.koreanguidebackend.domain.auth.controller;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.*;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
-import com.koreanguide.koreanguidebackend.domain.auth.data.enums.VerifyType;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
+import com.koreanguide.koreanguidebackend.domain.mail.data.enums.MailType;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -32,22 +31,17 @@ public class SignController {
 
     @ApiOperation(value = "비밀번호 재설정 이메일 인증 번호 요청")
     @PostMapping("/verify/request/pw")
-    public ResponseEntity<?> requestResetPasswordVerifyEmail(@RequestBody ValidateEmailRequestDto validateEmailRequestDto) throws MessagingException {
+    public ResponseEntity<?> requestResetPasswordVerifyEmail(
+            @RequestBody ValidateEmailRequestDto validateEmailRequestDto) throws MessagingException {
         return signService.sendResetPasswordVerifyMail(validateEmailRequestDto.getEmail());
     }
 
     @ApiOperation(value = "비밀번호 재설정 이메일 인증 번호 확인")
     @PostMapping("/verify/validate/pw")
-    public ResponseEntity<?> validateResetPasswordEmail(@RequestBody ValidateRequestDto validateRequestDto) {
-        if (signService.validateAuthKey(VerifyType.RESET_PASSWORD, validateRequestDto.getEmail(), validateRequestDto.getKey())) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    SignAlertResponseDto.builder()
-                            .ko("이메일 인증 번호가 일치하지 않습니다.")
-                            .en("Email authentication number does not match.")
-                            .build());
-        }
+    public ResponseEntity<SignAlertResponseDto> validateResetPasswordEmail(
+            @RequestBody ValidateRequestDto validateRequestDto) {
+        return signService.validateKey(
+                MailType.RESET_PASSWORD_VERIFY, validateRequestDto.getEmail(), validateRequestDto.getKey());
     }
 
     @ApiOperation(value = "비밀번호 재설정")
@@ -58,31 +52,21 @@ public class SignController {
 
     @ApiOperation(value = "회원가입 이메일 인증 번호 요청")
     @PostMapping("/verify/request")
-    public ResponseEntity<?> requestEmailAuth(@RequestBody ValidateEmailRequestDto validateEmailRequestDto) throws MessagingException {
+    public ResponseEntity<?> requestEmailAuth(@RequestBody ValidateEmailRequestDto validateEmailRequestDto)
+            throws MessagingException {
         return signService.sendVerifyMail(validateEmailRequestDto.getEmail());
     }
 
     @ApiOperation(value = "회원가입 이메일 인증 번호 확인")
     @PostMapping("/verify/validate")
     public ResponseEntity<?> validateEmail(@RequestBody ValidateRequestDto validateRequestDto) {
-        if (signService.validateAuthKey(VerifyType.SIGNUP, validateRequestDto.getEmail(), validateRequestDto.getKey())) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    SignAlertResponseDto.builder()
-                            .ko("이메일 인증 번호가 일치하지 않습니다.")
-                            .en("Email authentication number does not match.")
-                            .build());
-        }
+        return signService.validateKey(MailType.REGISTER_VERIFY, validateRequestDto.getEmail(),
+                validateRequestDto.getKey());
     }
 
     @ApiOperation(value = "회원가입")
     @PostMapping(value = "/signup")
     public ResponseEntity<?> signUp(@RequestBody SignUpRequestDto signUpRequestDto) {
-        if (!signService.validateAuthKey(VerifyType.SIGNUP, signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         return signService.signUp(signUpRequestDto);
     }
 

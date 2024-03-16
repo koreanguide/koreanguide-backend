@@ -41,7 +41,7 @@ public class Track {
     @Column(nullable = false)
     private String trackTitle;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String trackContent;
 
     @Column(nullable = false)

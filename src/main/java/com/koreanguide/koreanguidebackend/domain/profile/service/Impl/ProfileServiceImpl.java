@@ -7,6 +7,7 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.entity.BankAccounts
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
 import com.koreanguide.koreanguidebackend.domain.credit.data.enums.AccountProvider;
 import com.koreanguide.koreanguidebackend.domain.credit.exception.BankAccountsNotFoundException;
+import com.koreanguide.koreanguidebackend.domain.mail.service.MailService;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dao.ProfileDao;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLine;
@@ -16,12 +17,14 @@ import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
 import com.koreanguide.koreanguidebackend.domain.profile.service.ProfileService;
 import com.koreanguide.koreanguidebackend.domain.track.data.dao.TrackDao;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import javax.mail.MessagingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
@@ -32,20 +35,12 @@ import java.util.regex.Pattern;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
     private final UserDao userDao;
     private final TrackDao trackDao;
     private final ProfileDao profileDao;
     private final CreditDao creditDao;
-
-    @Autowired
-    public ProfileServiceImpl(ProfileDao profileDao, CreditDao creditDao,
-                              UserDao userDao, TrackDao trackDao) {
-        this.profileDao = profileDao;
-        this.creditDao = creditDao;
-        this.userDao = userDao;
-        this.trackDao = trackDao;
-    }
 
     public String TRANSLATE_LINE_TO_KO(SubwayLine subwayLine) {
         String SUBWAY_LINE_KO;

@@ -20,7 +20,7 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
-    public User getUserEntity(Long userId) {
+    public User getUserEntity(Long userId) throws UserNotFoundException {
         Optional<User> user = userRepository.findById(userId);
 
         if(user.isEmpty()) {
@@ -28,6 +28,29 @@ public class UserDaoImpl implements UserDao {
         }
 
         return user.get();
+    }
+
+    @Override
+    public User getUserEntityByEmail(String email) throws UserNotFoundException {
+        Optional<User> user = userRepository.findByEmail(email);
+
+        if(user.isEmpty()) {
+            throw new UserNotFoundException();
+        }
+
+        return user.get();
+    }
+
+    @Override
+    public boolean checkAlreadyExistUserByEmail(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        return user.isPresent();
+    }
+
+    @Override
+    public boolean checkAlreadyExistUserByNickname(String nickname) {
+        Optional<User> user = userRepository.findByNickname(nickname);
+        return user.isPresent();
     }
 
     @Override
@@ -41,7 +64,7 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
-    public void changePassword(User user, String password) {
+    public void changePassword(User user, String password) throws RuntimeException {
         if(passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException();
         }
