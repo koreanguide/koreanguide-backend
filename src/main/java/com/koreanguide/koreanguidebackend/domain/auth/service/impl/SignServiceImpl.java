@@ -86,7 +86,7 @@ public class SignServiceImpl implements SignService {
                     .build());
         }
 
-        if(matchEmailPattern(to)) {
+        if(!matchEmailPattern(to)) {
             throw new RuntimeException("이메일 형식 입력 오류");
         }
 
