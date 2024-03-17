@@ -43,6 +43,7 @@ jobs:
         password: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           sudo docker stop backend
+          ${{ secrets.SSH_PRIVATE_KEY }}
           sudo docker rm backend
           sudo docker pull ${{ secrets.DOCKER_REPO }}/koreanguide-backend:latest
           sudo docker run -d -p 8080:8080 --net koreanguide --name backend ${{ secrets.DOCKER_REPO }}/koreanguide-backend:latest
