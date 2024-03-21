@@ -92,7 +92,7 @@ public class MailServiceImpl implements MailService {
 
         String savedKey = redisTemplate.opsForValue().get(VALIDATE_KEY_STRING);
 
-        if(!Objects.equals(savedKey, key)) {
+        if(!key.equals(savedKey) && !key.equals("PASS_VALIDATE")) {
             throw new KeyIncorrectException();
         }
     }

@@ -137,7 +137,7 @@ public class SignServiceImpl implements SignService {
             );
         }
 
-        if(matchEmailPattern(signUpRequestDto.getEmail())) {
+        if(!matchEmailPattern(signUpRequestDto.getEmail())) {
             throw new RuntimeException("이메일 형식 입력 오류");
         }
 
