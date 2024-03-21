@@ -215,6 +215,7 @@ public class TrackServiceImpl implements TrackService {
         trackResponseDto.setTrackId(track.getId());
         trackResponseDto.setTitle(track.getTrackTitle());
         trackResponseDto.setPreview(track.getTrackPreview());
+        trackResponseDto.setPrimaryImage(track.getPrimaryImageUrl());
 
         List<String> TAGS_LIST = new ArrayList<>();
         for(TrackTag trackTag : trackTagList) {
