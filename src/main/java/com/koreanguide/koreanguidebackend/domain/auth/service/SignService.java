@@ -13,6 +13,9 @@ import javax.mail.MessagingException;
 public interface SignService {
     ResponseEntity<SignAlertResponseDto> validateKey(MailType mailType, String targetEmail, String key);
     ResponseEntity<?> sendVerifyMail(String to) throws MessagingException;
+
+    ResponseEntity<?> requestVerifyMail(String to) throws MessagingException;
+
     ResponseEntity<?> signUp(SignUpRequestDto signUpRequestDto);
     ResponseEntity<?> signIn(SignInRequestDto signInRequestDto);
     ResponseEntity<?> resetPassword(ResetPasswordRequestDto resetPasswordRequestDto);

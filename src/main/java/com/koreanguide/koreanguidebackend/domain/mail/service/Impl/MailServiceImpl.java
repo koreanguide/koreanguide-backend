@@ -7,7 +7,12 @@ import com.koreanguide.koreanguidebackend.domain.mail.data.enums.MailType;
 import com.koreanguide.koreanguidebackend.domain.mail.exception.KeyIncorrectException;
 import com.koreanguide.koreanguidebackend.domain.mail.exception.MailResendTimeException;
 import com.koreanguide.koreanguidebackend.domain.mail.service.MailService;
+import com.koreanguide.koreanguidebackend.domain.mail.task.MailTask;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,17 +25,19 @@ import org.thymeleaf.spring5.SpringTemplateEngine;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class MailServiceImpl implements MailService {
     private final MailDao mailDao;
     private final JavaMailSender mailSender;
     private final RedisTemplate<String, String> redisTemplate;
     private final SpringTemplateEngine springTemplateEngine;
+    private final RabbitTemplate rabbitTemplate;
+    private final Queue queue;
 
     private String generateRandKey() {
         Random random = new Random();
@@ -117,6 +124,42 @@ public class MailServiceImpl implements MailService {
 
             throw new MailResendTimeException(timeLeft);
         }
+    }
+
+    @Override
+    public void processMail(MailType mailType, String targetEmail) throws MessagingException, MailResendTimeException {
+        String GENERATED_RANDOM_KEY = generateRandKey();
+
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
+
+        mimeMessageHelper.setTo(targetEmail);
+        mimeMessageHelper.setSubject("KOREAN GUIDE 이메일 인증 안내");
+        mimeMessageHelper.setText(generateMailTemplate(mailType, GENERATED_RANDOM_KEY), true);
+
+        mailSender.send(mimeMessage);
+
+        setRedisExpireTime(mailType, GENERATED_RANDOM_KEY, targetEmail);
+
+        mailDao.saveMailLogEntity(MailLog.builder()
+                .email(targetEmail)
+                .mailType(mailType)
+                .sentAt(LocalDateTime.now())
+                .build());
+
+        log.info("Email Send Successful");
+    }
+
+    @Override
+    public void requestMail(MailType mailType, String targetEmail) {
+        checkMailResendTime(mailType, targetEmail);
+        JSONObject jsonObject = new JSONObject(MailTask.builder()
+                .mailType(mailType)
+                .email(targetEmail)
+            .build());
+        rabbitTemplate.convertAndSend(queue.getName(), jsonObject.toString());
+
+        log.info("Email Request Successful: " + jsonObject);
     }
 
     @Override

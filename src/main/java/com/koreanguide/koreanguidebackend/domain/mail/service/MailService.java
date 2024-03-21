@@ -10,6 +10,11 @@ import javax.mail.MessagingException;
 
 public interface MailService {
     void validateKey(MailType mailType, String targetEmail, String key) throws KeyIncorrectException;
+
+    void processMail(MailType mailType, String targetEmail) throws MessagingException, MailResendTimeException;
+
+    void requestMail(MailType mailType, String targetEmail);
+
     ResponseEntity<SignAlertResponseDto> sendMail(MailType mailType, String targetEmail)
             throws MessagingException, MailResendTimeException;
 }

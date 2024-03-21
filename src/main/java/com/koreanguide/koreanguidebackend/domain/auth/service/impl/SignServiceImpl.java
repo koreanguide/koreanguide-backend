@@ -106,6 +106,35 @@ public class SignServiceImpl implements SignService {
     }
 
     @Override
+    public ResponseEntity<?> requestVerifyMail(String to) throws MessagingException {
+        if(userDao.checkAlreadyExistUserByEmail(to)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(SignAlertResponseDto.builder()
+                            .en("This email address is already registered with the service. " +
+                                    "Please use a different email address or try to sign-in.")
+                            .ko("이미 서비스에 등록된 이메일 주소입니다. 다른 이메일 주소를 사용하거나 로그인을 시도하십시오.")
+                    .build());
+        }
+
+        if(!matchEmailPattern(to)) {
+            throw new RuntimeException("이메일 형식 입력 오류");
+        }
+
+        try {
+            mailService.requestMail(MailType.REGISTER_VERIFY, to);
+
+            return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
+                    .en("The authentication number will arrive soon at the email you requested.")
+                    .ko("요청하신 이메일로 인증번호가 곧 도착합니다.")
+                    .build());
+        } catch (MailResendTimeException e) {
+            return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
+                    .en("You can resend the email authentication after " + e.getMessage() + ".")
+                    .ko(e.getMessage() + " 후에 이메일 인증 재발송이 가능합니다.")
+                    .build());
+        }
+    }
+
+    @Override
     public ResponseEntity<?> signUp(SignUpRequestDto signUpRequestDto) {
         if (userDao.checkAlreadyExistUserByEmail(signUpRequestDto.getEmail())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
