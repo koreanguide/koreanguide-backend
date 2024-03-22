@@ -123,6 +123,7 @@ public class CreditController {
         return creditService.checkBalance(jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
     }
 
+    @Deprecated
     @ApiOperation(value = "크레딧 출금")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
@@ -136,6 +137,7 @@ public class CreditController {
                 transactionCreditRequestDto);
     }
 
+    @Deprecated
     @ApiOperation(value = "크레딧 입금")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,

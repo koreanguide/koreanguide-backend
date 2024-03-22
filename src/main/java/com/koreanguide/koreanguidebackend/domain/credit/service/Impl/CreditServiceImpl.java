@@ -45,8 +45,13 @@ public class CreditServiceImpl implements CreditService {
     public String getDetailContent(TransactionContent transactionContent) {
         String DETAIL_CONTENT = "알 수 없음";
 
-        if(transactionContent.equals(TransactionContent.WITHDRAW_TO_ACCOUNT)) {
-            DETAIL_CONTENT = "크레딧 계좌 환급";
+        switch (transactionContent) {
+            case WITHDRAW_TO_ACCOUNT:
+                DETAIL_CONTENT = "크레딧 계좌 환급";
+                break;
+            case PROFILE_COMPLETE:
+                DETAIL_CONTENT = "프로필 완성 시작 크레딧 지급";
+                break;
         }
 
         return DETAIL_CONTENT;
@@ -55,10 +60,13 @@ public class CreditServiceImpl implements CreditService {
     public String getTransactionType(TransactionType transactionType) {
         String TRANSACTION_TYPE = "알 수 없음";
 
-        if(transactionType.equals(TransactionType.DEPOSIT)) {
-            TRANSACTION_TYPE = "입금";
-        } else if (transactionType.equals(TransactionType.WITHDRAW)) {
-            TRANSACTION_TYPE = "출금";
+        switch (transactionType) {
+            case DEPOSIT:
+                TRANSACTION_TYPE = "입금";
+                break;
+            case WITHDRAW:
+                TRANSACTION_TYPE = "출금";
+                break;
         }
 
         return TRANSACTION_TYPE;
@@ -85,6 +93,26 @@ public class CreditServiceImpl implements CreditService {
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(creditHistoryResponseDtoList);
+    }
+
+    @Override
+    public void depositCreditToUser(Long userId, Long amount, TransactionContent transactionContent) {
+        LocalDateTime CURRENT_TIME = LocalDateTime.now();
+        User user = userDao.getUserEntity(userId);
+        Credit credit = creditDao.getUserCreditEntity(user);
+
+        credit.setAmount(credit.getAmount() + amount);
+        credit.setRecentUsed(CURRENT_TIME);
+
+        creditDao.saveCreditEntity(credit);
+
+        creditDao.saveCreditLogEntity(CreditLog.builder()
+                .date(CURRENT_TIME)
+                .amount(amount)
+                .credit(credit)
+                .transactionType(TransactionType.DEPOSIT)
+                .transactionContent(transactionContent)
+                .build());
     }
 
     @Override

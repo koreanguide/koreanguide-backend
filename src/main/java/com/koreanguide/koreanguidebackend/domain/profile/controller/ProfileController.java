@@ -1,6 +1,8 @@
 package com.koreanguide.koreanguidebackend.domain.profile.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
+import com.koreanguide.koreanguidebackend.domain.credit.data.enums.TransactionContent;
+import com.koreanguide.koreanguidebackend.domain.credit.service.CreditService;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.*;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MainProfileAlertResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.service.ProfileService;
@@ -8,7 +10,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,16 +18,11 @@ import javax.servlet.http.HttpServletRequest;
 
 @Api(tags = {"Profile API"})
 @RestController
+@AllArgsConstructor
 @RequestMapping("/api/v1/profile")
 public class ProfileController {
     private final ProfileService profileService;
     private final JwtTokenProvider jwtTokenProvider;
-
-    @Autowired
-    public ProfileController(ProfileService profileService, JwtTokenProvider jwtTokenProvider) {
-        this.profileService = profileService;
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
 
     public Long GET_USER_ID_BY_TOKEN(HttpServletRequest request) {
         return jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN"));
@@ -72,6 +69,16 @@ public class ProfileController {
     })
     public ResponseEntity<MainProfileAlertResponseDto> getMainPageProfileAlert(HttpServletRequest request) {
         return profileService.getMainPageProfileAlert(GET_USER_ID_BY_TOKEN(request));
+    }
+
+    @ApiOperation(value = "메인 페이지 프로필 완성 단계 크레딧 지급 요청")
+    @PostMapping("/progress/deposit")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<?> depositMainPageProfileCompleteCredit(HttpServletRequest request) {
+        return profileService.depositMainPageProfileCompleteCredit(GET_USER_ID_BY_TOKEN(request));
     }
 
     @ApiOperation(value = "사용자 프로필 사진 삭제")

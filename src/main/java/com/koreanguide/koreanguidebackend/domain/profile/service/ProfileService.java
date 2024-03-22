@@ -9,6 +9,8 @@ public interface ProfileService {
 
     ResponseEntity<MainProfileAlertResponseDto> getMainPageProfileAlert(Long userId);
 
+    ResponseEntity<?> depositMainPageProfileCompleteCredit(Long userId);
+
     ResponseEntity<?> getUserInfo(Long userId);
     ResponseEntity<?> changeName(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
     ResponseEntity<?> changePhoneNum(Long userId, ChangeProfileRequestDto changeProfileRequestDto);

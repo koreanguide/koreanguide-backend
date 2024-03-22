@@ -6,7 +6,9 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.dao.CreditDao;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.BankAccounts;
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
 import com.koreanguide.koreanguidebackend.domain.credit.data.enums.AccountProvider;
+import com.koreanguide.koreanguidebackend.domain.credit.data.enums.TransactionContent;
 import com.koreanguide.koreanguidebackend.domain.credit.exception.BankAccountsNotFoundException;
+import com.koreanguide.koreanguidebackend.domain.credit.service.CreditService;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dao.ProfileDao;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLine;
@@ -38,6 +40,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final TrackDao trackDao;
     private final ProfileDao profileDao;
     private final CreditDao creditDao;
+    private final CreditService creditService;
 
     public String TRANSLATE_LINE_TO_KO(SubwayLine subwayLine) {
         String SUBWAY_LINE_KO;
@@ -188,6 +191,22 @@ public class ProfileServiceImpl implements ProfileService {
         mainProfileAlertResponseDto.setCouponUsed(profile.isProfileCompleteCouponUsed());
 
         return ResponseEntity.status(HttpStatus.OK).body(mainProfileAlertResponseDto);
+    }
+
+    @Override
+    public ResponseEntity<?> depositMainPageProfileCompleteCredit(Long userId) {
+        MainProfileAlertResponseDto mainProfileAlertResponseDto = getMainPageProfileAlert(userId).getBody();
+        assert mainProfileAlertResponseDto != null;
+        if(mainProfileAlertResponseDto.isProfileComplete() && !mainProfileAlertResponseDto.isCouponUsed()) {
+            creditService.depositCreditToUser(userId, 10000L, TransactionContent.PROFILE_COMPLETE);
+            User user = userDao.getUserEntity(userId);
+            Profile profile = profileDao.getUserProfile(user);
+            profile.setProfileCompleteCouponUsed(true);
+            profileDao.saveProfileEntity(profile);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     @Override
