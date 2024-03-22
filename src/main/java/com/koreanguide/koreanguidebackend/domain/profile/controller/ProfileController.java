@@ -2,6 +2,7 @@ package com.koreanguide.koreanguidebackend.domain.profile.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.*;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MainProfileAlertResponseDto;
 import com.koreanguide.koreanguidebackend.domain.profile.service.ProfileService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -61,6 +62,16 @@ public class ProfileController {
     public ResponseEntity<?> changeProfileUrl(HttpServletRequest request,
                                               @RequestBody ChangeProfileRequestDto changeProfileRequestDto) {
         return profileService.changeProfileUrl(GET_USER_ID_BY_TOKEN(request), changeProfileRequestDto);
+    }
+
+    @ApiOperation(value = "메인 페이지 프로필 완성 단계")
+    @GetMapping("/progress")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<MainProfileAlertResponseDto> getMainPageProfileAlert(HttpServletRequest request) {
+        return profileService.getMainPageProfileAlert(GET_USER_ID_BY_TOKEN(request));
     }
 
     @ApiOperation(value = "사용자 프로필 사진 삭제")

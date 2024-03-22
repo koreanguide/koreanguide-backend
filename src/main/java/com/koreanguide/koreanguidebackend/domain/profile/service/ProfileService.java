@@ -1,10 +1,14 @@
 package com.koreanguide.koreanguidebackend.domain.profile.service;
 
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.request.*;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.response.MainProfileAlertResponseDto;
 import org.springframework.http.ResponseEntity;
 
 public interface ProfileService {
     ResponseEntity<?> getUserProfile(Long userId);
+
+    ResponseEntity<MainProfileAlertResponseDto> getMainPageProfileAlert(Long userId);
+
     ResponseEntity<?> getUserInfo(Long userId);
     ResponseEntity<?> changeName(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
     ResponseEntity<?> changePhoneNum(Long userId, ChangeProfileRequestDto changeProfileRequestDto);

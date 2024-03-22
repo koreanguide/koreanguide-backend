@@ -31,6 +31,7 @@ public class ProfileDaoImpl implements ProfileDao {
                 .subwayStation(null)
                 .birth(null)
                 .name(null)
+                .profileCompleteCouponUsed(false)
                 .user(user)
                 .build()));
     }

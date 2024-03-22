@@ -46,6 +46,9 @@ public class Profile {
     @Column
     private String introduce;
 
+    @Column
+    private boolean profileCompleteCouponUsed = false;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

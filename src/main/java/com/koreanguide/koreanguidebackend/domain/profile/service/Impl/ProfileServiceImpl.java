@@ -7,7 +7,6 @@ import com.koreanguide.koreanguidebackend.domain.credit.data.entity.BankAccounts
 import com.koreanguide.koreanguidebackend.domain.credit.data.entity.Credit;
 import com.koreanguide.koreanguidebackend.domain.credit.data.enums.AccountProvider;
 import com.koreanguide.koreanguidebackend.domain.credit.exception.BankAccountsNotFoundException;
-import com.koreanguide.koreanguidebackend.domain.mail.service.MailService;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dao.ProfileDao;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
 import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.SubwayLine;
@@ -19,12 +18,10 @@ import com.koreanguide.koreanguidebackend.domain.track.data.dao.TrackDao;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.mail.MessagingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
@@ -132,6 +129,65 @@ public class ProfileServiceImpl implements ProfileService {
         profileResponseDto.setAddress(profile.getUser().getCountry());
 
         return ResponseEntity.status(HttpStatus.OK).body(profileResponseDto);
+    }
+
+    @Override
+    public ResponseEntity<MainProfileAlertResponseDto> getMainPageProfileAlert(Long userId) {
+        MainProfileAlertResponseDto mainProfileAlertResponseDto = new MainProfileAlertResponseDto();
+
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
+        List<Track> track = trackDao.getUserAllTrack(user);
+
+        int currentLevel = 1;
+
+        // 1단계 여부
+        mainProfileAlertResponseDto.setFirstLevel(true);
+
+        // 2단계 여부
+        if(profile.getIntroduce() == null) {
+            mainProfileAlertResponseDto.setSecondLevel(false);
+        } else {
+            mainProfileAlertResponseDto.setSecondLevel(true);
+            currentLevel++;
+        }
+
+        // 3단계 여부
+        if(profile.getSubwayLine() == null || profile.getSubwayStation() == null) {
+            mainProfileAlertResponseDto.setThirdLevel(false);
+        } else {
+            mainProfileAlertResponseDto.setThirdLevel(true);
+            currentLevel++;
+        }
+
+        // 4단계 여부
+        if(profile.getBirth() == null) {
+            mainProfileAlertResponseDto.setFourthLevel(false);
+        } else {
+            mainProfileAlertResponseDto.setFourthLevel(true);
+            currentLevel++;
+        }
+
+        // 5단계 여부
+        if(track.isEmpty()) {
+            mainProfileAlertResponseDto.setFifthLevel(false);
+        } else {
+            mainProfileAlertResponseDto.setFifthLevel(true);;
+            currentLevel++;
+        }
+
+        // 단계 표시
+        mainProfileAlertResponseDto.setLevel(currentLevel);
+
+        // 완료 여부
+        if(currentLevel == 5) {
+            mainProfileAlertResponseDto.setProfileComplete(true);
+        }
+
+        // 쿠폰 사용 여부
+        mainProfileAlertResponseDto.setCouponUsed(profile.isProfileCompleteCouponUsed());
+
+        return ResponseEntity.status(HttpStatus.OK).body(mainProfileAlertResponseDto);
     }
 
     @Override
