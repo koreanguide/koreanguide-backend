@@ -11,6 +11,7 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInReq
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.TokenResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
+import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SignType;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserRole;
 import com.koreanguide.koreanguidebackend.domain.auth.exception.UserNotFoundException;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
@@ -188,6 +189,7 @@ public class SignServiceImpl implements SignService {
                 .nickname(signUpRequestDto.getNickname())
                 .userRole(signUpRequestDto.getUserRole())
                 .state(KoreaState.SEOUL)
+                .signType(SignType.KOREANGUIDE)
                 .country(signUpRequestDto.getCountry())
                 .profileUrl("DEFAULT")
                 .password(passwordEncoder.encode(signUpRequestDto.getPassword()))

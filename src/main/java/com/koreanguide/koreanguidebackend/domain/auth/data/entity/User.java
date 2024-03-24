@@ -3,6 +3,7 @@ package com.koreanguide.koreanguidebackend.domain.auth.data.entity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
+import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SignType;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserRole;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -51,6 +52,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private KoreaState state = KoreaState.SEOUL;
+
+    @Column(nullable = false)
+    @Enumerated
+    private SignType signType = SignType.KOREANGUIDE;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
