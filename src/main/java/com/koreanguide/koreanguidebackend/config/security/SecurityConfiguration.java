@@ -31,6 +31,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         "/api/signup",
                         "/api/exception",
                         "/api/refresh").permitAll()
+                .antMatchers("/api/v1/seoul/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/post").hasRole("USER")
                 .antMatchers(HttpMethod.GET, "/post").permitAll()
                 .antMatchers(HttpMethod.PUT, "/post").permitAll()
