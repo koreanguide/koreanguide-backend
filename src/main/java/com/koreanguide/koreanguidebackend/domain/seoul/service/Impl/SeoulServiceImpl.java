@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.ShopResponseDto;
 import com.koreanguide.koreanguidebackend.domain.seoul.service.SeoulService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SeoulServiceImpl implements SeoulService {
     @Value("${seoul.api.key}")
     private String SEOUL_API_KEY;
