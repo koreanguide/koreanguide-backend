@@ -9,8 +9,10 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAler
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.TokenResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.entity.KakaoUser;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
+import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SignType;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserRole;
 import com.koreanguide.koreanguidebackend.domain.auth.exception.UserNotFoundException;
@@ -21,8 +23,13 @@ import com.koreanguide.koreanguidebackend.domain.mail.data.enums.MailType;
 import com.koreanguide.koreanguidebackend.domain.mail.exception.KeyIncorrectException;
 import com.koreanguide.koreanguidebackend.domain.mail.exception.MailResendTimeException;
 import com.koreanguide.koreanguidebackend.domain.mail.service.MailService;
-import lombok.AllArgsConstructor;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dao.ProfileDao;
+import com.koreanguide.koreanguidebackend.domain.profile.data.dto.enums.Language;
+import com.koreanguide.koreanguidebackend.domain.profile.data.entity.Profile;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +40,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -40,15 +53,22 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class SignServiceImpl implements SignService {
     private final UserDao userDao;
     private final CreditDao creditDao;
+    private final ProfileDao profileDao;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final UserDetailsService userDetailsService;
     private final MailService mailService;
     private final RedisTemplate<String, String> redisTemplate;
+
+    @Value("${KAKAO.CLIENT.ID}")
+    private String KAKAO_CLIENT_ID;
+
+    @Value("${KAKAO.REDIRECT.URI}")
+    private String KAKAO_REDIRECT_URI;
 
     private String generateAccessToken(String email, List<String> roles) {
         return jwtTokenProvider.createAccessToken(String.valueOf(email), roles);
@@ -61,6 +81,130 @@ public class SignServiceImpl implements SignService {
     private boolean matchEmailPattern(String email) {
         String emailPattern = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
         return email.matches(emailPattern);
+    }
+
+    public String createKakaoToken(String code) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://kauth.kakao.com/oauth/token"))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "grant_type=" + "authorization_code" +
+                                "&client_id=" + KAKAO_CLIENT_ID +
+                                "&redirect_uri=" + KAKAO_REDIRECT_URI +
+                                "&code=" + code
+                ))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        JSONObject jsonObject = new JSONObject(response.body());
+
+        return jsonObject.getString("access_token");
+    }
+
+    public String getRandomPassword() {
+        String CHAR_LOWER = "abcdefghijklmnopqrstuvwxyz";
+        String CHAR_UPPER = CHAR_LOWER.toUpperCase();
+        String NUMBER = "0123456789";
+
+        String DATA_FOR_RANDOM_STRING = CHAR_LOWER + CHAR_UPPER + NUMBER;
+        SecureRandom random = new SecureRandom();
+
+        StringBuilder sb = new StringBuilder(16);
+        for (int i = 0; i < 16; i++) {
+            int rndCharAt = random.nextInt(DATA_FOR_RANDOM_STRING.length());
+            char rndChar = DATA_FOR_RANDOM_STRING.charAt(rndCharAt);
+
+            sb.append(rndChar);
+        }
+
+        return sb.toString();
+    }
+
+    public KakaoUser getKakaoInfo(String accessToken) throws IOException, InterruptedException {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://kapi.kakao.com/v2/user/me"))
+                .header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+                .header("Authorization", "Bearer " + accessToken)
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        JSONObject jsonObject = new JSONObject(response.body());
+
+        JSONObject kakao_account = jsonObject.getJSONObject("kakao_account");
+        JSONObject profile = kakao_account.getJSONObject("profile");
+
+        return KakaoUser.builder()
+                    .email(kakao_account.getString("email"))
+                    .profileUrl(profile.getString("profile_image_url"))
+                    .nickname(profile.getString("nickname"))
+                .build();
+    }
+
+    @Override
+    public ResponseEntity<SignInResponseDto> socialKakaoLogin(String code) throws Exception {
+        String kakaoUserToken = createKakaoToken(code);
+        KakaoUser kakaoUser = getKakaoInfo(kakaoUserToken);
+
+        // 이미 등록된 회원
+        if(userDao.checkAlreadyExistUserByEmail(kakaoUser.getEmail())) {
+            User alreadyExistUser = userDao.getUserEntityByEmail(kakaoUser.getEmail());
+
+            return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
+                        .isGuide(alreadyExistUser.getUserRole().equals(UserRole.GUIDE))
+                        .accessToken(generateAccessToken(alreadyExistUser.getEmail(), alreadyExistUser.getRoles()))
+                        .refreshToken(generateRefreshToken(alreadyExistUser.getEmail()))
+                        .email(alreadyExistUser.getEmail())
+                        .name(alreadyExistUser.getNickname())
+                    .build());
+        }
+
+        User user = User.builder()
+                .email(kakaoUser.getEmail())
+                .nickname(kakaoUser.getNickname())
+                .userRole(UserRole.GUIDE)
+                .state(KoreaState.SEOUL)
+                .signType(SignType.KOREANGUIDE)
+                .country(SeoulCountry.GANGNAM)
+                .profileUrl(kakaoUser.getProfileUrl() == null ? "DEFAULT" : kakaoUser.getProfileUrl())
+                .password(passwordEncoder.encode(getRandomPassword()))
+                .roles(Collections.singletonList("ROLE_USER"))
+                .createdAt(LocalDateTime.now())
+                .lastAccessTime(LocalDateTime.now())
+                .build();
+
+        userDao.saveUserEntity(user);
+
+        creditDao.saveCreditEntity(Credit.builder()
+                .recentUsed(LocalDateTime.now())
+                .amount(0L)
+                .user(user)
+                .build());
+
+        profileDao.saveProfileEntity(Profile.builder()
+                    .isPublic(true)
+                    .introduce(null)
+                    .phoneNum(null)
+                    .firstLang(Language.KOREAN)
+                    .secondLang(Language.ENGLISH)
+                    .subwayLine(null)
+                    .subwayStation(null)
+                    .birth(null)
+                    .name(null)
+                    .profileCompleteCouponUsed(false)
+                    .user(user)
+                .build());
+
+        return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
+                .isGuide(user.getUserRole().equals(UserRole.GUIDE))
+                .accessToken(generateAccessToken(user.getEmail(), user.getRoles()))
+                .refreshToken(generateRefreshToken(user.getEmail()))
+                .email(user.getEmail())
+                .name(user.getNickname())
+                .build());
     }
 
     @Override
@@ -199,9 +343,24 @@ public class SignServiceImpl implements SignService {
                 .build();
 
         userDao.saveUserEntity(user);
+
         creditDao.saveCreditEntity(Credit.builder()
                 .recentUsed(LocalDateTime.now())
                 .amount(0L)
+                .user(user)
+                .build());
+
+        profileDao.saveProfileEntity(Profile.builder()
+                .isPublic(true)
+                .introduce(null)
+                .phoneNum(null)
+                .firstLang(Language.KOREAN)
+                .secondLang(Language.ENGLISH)
+                .subwayLine(null)
+                .subwayStation(null)
+                .birth(null)
+                .name(null)
+                .profileCompleteCouponUsed(false)
                 .user(user)
                 .build());
 

@@ -54,7 +54,7 @@ public class User implements UserDetails {
     private KoreaState state = KoreaState.SEOUL;
 
     @Column(nullable = false)
-    @Enumerated
+    @Enumerated(EnumType.STRING)
     private SignType signType = SignType.KOREANGUIDE;
 
     @Column(nullable = false)

@@ -2,6 +2,7 @@ package com.koreanguide.koreanguidebackend.domain.auth.controller;
 
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.*;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignAlertResponseDto;
+import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
 import com.koreanguide.koreanguidebackend.domain.mail.data.enums.MailType;
 import io.swagger.annotations.Api;
@@ -74,6 +75,12 @@ public class SignController {
     @PostMapping(value = "/v1/signup")
     public ResponseEntity<?> signUp(@RequestBody SignUpRequestDto signUpRequestDto) {
         return signService.signUp(signUpRequestDto);
+    }
+
+    @ApiOperation(value = "카카오 로그인")
+    @PostMapping(value = "/v1/kakao")
+    public ResponseEntity<SignInResponseDto> signWithKakao(@RequestParam String code) throws Exception {
+        return signService.socialKakaoLogin(code);
     }
 
     @ApiOperation(value = "로그인")
