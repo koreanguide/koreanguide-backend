@@ -34,7 +34,12 @@ public class AppointmentController {
         return appointmentService.getAppointmentInfoUsedByMain(GET_USER_ID_BY_TOKEN(request));
     }
 
+    @ApiOperation(value = "약속 취소 요청")
     @PostMapping("/cancel")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
     public ResponseEntity<?> requestCancelAppointment(HttpServletRequest request,
                                                       @RequestParam Long appointmentId) {
         return appointmentService.requestCancelAppointment(GET_USER_ID_BY_TOKEN(request), appointmentId);
