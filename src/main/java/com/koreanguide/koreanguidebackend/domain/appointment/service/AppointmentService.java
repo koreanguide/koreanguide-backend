@@ -6,5 +6,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 
 public interface AppointmentService {
+    ResponseEntity<?> requestCancelAppointment(Long userId, Long appointmentId);
+
     ResponseEntity<List<AppointmentMainResponseDto>> getAppointmentInfoUsedByMain(Long userId);
 }

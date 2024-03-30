@@ -9,4 +9,6 @@ public interface AppointmentDao {
     void saveAppointmentEntity(Appointment appointment);
 
     List<Appointment> getAppointmentListByUser(User user);
+
+    Appointment getAppointmentEntity(Long appointmentId);
 }

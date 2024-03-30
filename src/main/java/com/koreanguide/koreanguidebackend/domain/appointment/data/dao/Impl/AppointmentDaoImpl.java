@@ -23,4 +23,9 @@ public class AppointmentDaoImpl implements AppointmentDao {
     public List<Appointment> getAppointmentListByUser(User user) {
         return appointmentRepository.getAppointmentByGuide(user);
     }
+
+    @Override
+    public Appointment getAppointmentEntity(Long appointmentId) {
+        return appointmentRepository.getById(appointmentId);
+    }
 }

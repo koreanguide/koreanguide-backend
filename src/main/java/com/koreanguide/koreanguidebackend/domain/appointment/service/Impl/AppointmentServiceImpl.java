@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dao.AppointmentDao;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.entity.Appointment;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.response.AppointmentMainResponseDto;
+import com.koreanguide.koreanguidebackend.domain.appointment.data.enums.AppointmentStatus;
 import com.koreanguide.koreanguidebackend.domain.appointment.service.AppointmentService;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
@@ -20,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +64,31 @@ public class AppointmentServiceImpl implements AppointmentService {
             log.error(e.getMessage());
         }
         return "주소를 가져올 수 없음";
+    }
+
+    @Override
+    public ResponseEntity<?> requestCancelAppointment(Long userId, Long appointmentId) {
+        User user = userDao.getUserEntity(userId);
+
+        Appointment appointment = appointmentDao.getAppointmentEntity(appointmentId);
+
+        if(!appointment.getGuide().equals(user) || !appointment.getVisitor().equals(user)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("사용자의 일정이 아닙니다.");
+        }
+
+        if(appointment.getRequestCancelUserType() == null || appointment.isCanceled() ||
+        appointment.getAppointmentStatus().equals(AppointmentStatus.PENDING_CANCEL) ||
+                appointment.getAppointmentStatus().equals(AppointmentStatus.CANCELED_WITH_ACCEPTED)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 취소되었거나 취소 요청 중인 일정입니다.");
+        }
+
+        appointment.setRequestCancelUserType(UserType.DOMESTIC);
+        appointment.setRequestCancelAt(LocalDateTime.now());
+        appointment.setAppointmentStatus(AppointmentStatus.PENDING_CANCEL);
+
+        appointmentDao.saveAppointmentEntity(appointment);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
