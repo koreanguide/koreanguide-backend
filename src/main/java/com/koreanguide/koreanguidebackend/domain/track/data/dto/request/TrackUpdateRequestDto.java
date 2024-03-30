@@ -17,6 +17,7 @@ public class TrackUpdateRequestDto {
     private String trackPreview;
     private String trackContent;
     private String primaryImageUrl;
+    private boolean visible;
     private boolean useAutoTranslate;
     private List<TrackImageApplyRequestDto> images;
     private List<TrackTagApplyRequestDto> tags;

@@ -115,6 +115,7 @@ public class TrackServiceImpl implements TrackService {
         track.setTrackPreview(trackUpdateRequestDto.getTrackPreview());
         track.setPrimaryImageUrl(trackUpdateRequestDto.getPrimaryImageUrl());
         track.setAutoTranslate(trackUpdateRequestDto.isUseAutoTranslate());
+        track.setVisible(trackUpdateRequestDto.isVisible());
         track.setUpdatedAt(CURRENT_TIME);
 
         trackDao.saveTrack(track);
