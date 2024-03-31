@@ -44,4 +44,25 @@ public class AppointmentController {
                                                       @RequestParam Long appointmentId) {
         return appointmentService.requestCancelAppointment(GET_USER_ID_BY_TOKEN(request), appointmentId);
     }
+
+    @ApiOperation(value = "사용자 모든 약속(일정) 조회")
+    @GetMapping("/receipt")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public ResponseEntity<?> getAppointmentReceipt(HttpServletRequest request,
+                                                   @RequestParam Long appointmentId) {
+        return appointmentService.getAppointmentReceiptInfo(GET_USER_ID_BY_TOKEN(request), appointmentId);
+    }
+
+    @ApiOperation(value = "테스트 약속 생성")
+    @PostMapping("/test")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "X-AUTH-TOKEN", value = "X-AUTH-TOKEN", required = true,
+                    dataType = "String", paramType = "header")
+    })
+    public void createTestAppointment(HttpServletRequest request) {
+        appointmentService.createTestAppointment(GET_USER_ID_BY_TOKEN(request));
+    }
 }

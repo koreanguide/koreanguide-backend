@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dao.AppointmentDao;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.entity.Appointment;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.response.AppointmentMainResponseDto;
+import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.response.AppointmentReceiptResponseDto;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.enums.AppointmentStatus;
 import com.koreanguide.koreanguidebackend.domain.appointment.service.AppointmentService;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserType;
+import com.koreanguide.koreanguidebackend.domain.chat.data.dao.ChatDao;
+import com.koreanguide.koreanguidebackend.domain.track.data.dao.TrackDao;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,14 +35,34 @@ import java.util.List;
 public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentDao appointmentDao;
     private final UserDao userDao;
+    private final TrackDao trackDao;
+    private final ChatDao chatDao;
 
     @Value("${KAKAO.CLIENT.ID}")
     private String REST_API_KEY;
 
+    // AAAA년 BB월 CC일 D요일 형식 변환
+    public String FORMAT_DATE_TO_STRING_YMDE(LocalDateTime time) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 E요일");
+        return time.format(formatter);
+    }
+
+    // 오전 or 오후 A시 형식 변환
+    public String FORMAT_DATE_TO_STRING_HM(LocalDateTime time) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("a KK시");
+        return time.format(formatter);
+    }
+
+    // AAAA년 BB월 CC일 D요일 오전 or 오후 E시 형식 변환
+    public String FORMAT_DATE_TO_STRING_YMDEHM(LocalDateTime time) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 E요일 a KK시");
+        return time.format(formatter);
+    }
+
     public String getAddress(double longitude, double latitude) {
         try {
             String urlString = "https://dapi.kakao.com/v2/local/geo/coord2address.json?x=" + longitude
-                    + "&y=" + latitude + "&input_coord=WGS84";
+                    + "&y=" + latitude;
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -57,8 +80,9 @@ public class AppointmentServiceImpl implements AppointmentService {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readTree(response.toString());
             JsonNode documents = rootNode.path("documents");
-            JsonNode roadAddress = documents.get(0).path("road_address");
+            JsonNode roadAddress = documents.get(0).path("address");
 
+            System.out.println(roadAddress.path("address_name").asText());
             return roadAddress.path("address_name").asText();
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -102,13 +126,19 @@ public class AppointmentServiceImpl implements AppointmentService {
             appointmentMainResponseDto.setAppointmentId(appointment.getId());
             appointmentMainResponseDto.setUuid(appointment.getUuid());
 
-            DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 E요일");
-            DateTimeFormatter formatTime = DateTimeFormatter.ofPattern("a KK시");
+            appointmentMainResponseDto.setStartDate(
+                    FORMAT_DATE_TO_STRING_YMDE(appointment.getStartAt())
+            );
+            appointmentMainResponseDto.setEndDate(
+                    FORMAT_DATE_TO_STRING_YMDE(appointment.getEndAt())
+            );
+            appointmentMainResponseDto.setStartTime(
+                    FORMAT_DATE_TO_STRING_HM(appointment.getStartAt())
+            );
+            appointmentMainResponseDto.setEndTime(
+                    FORMAT_DATE_TO_STRING_HM(appointment.getEndAt())
+            );
 
-            appointmentMainResponseDto.setStartDate(appointment.getStartAt().format(formatDate));
-            appointmentMainResponseDto.setEndDate(appointment.getEndAt().format(formatDate));
-            appointmentMainResponseDto.setStartTime(appointment.getStartAt().format(formatTime));
-            appointmentMainResponseDto.setEndTime(appointment.getEndAt().format(formatTime));
             appointmentMainResponseDto.setTargetNickname(appointment.getVisitor().getNickname());
             appointmentMainResponseDto.setTargetProfileUrl(appointment.getVisitor().getProfileUrl());
             appointmentMainResponseDto.setTrackId(appointment.getTrack().getId());
@@ -121,12 +151,9 @@ public class AppointmentServiceImpl implements AppointmentService {
             String KAKAO_MAP_URL = "https://map.kakao.com/link/map/" + appointment.getLatitude() + ","
                     + appointment.getLongitude();
             appointmentMainResponseDto.setKakaoMapUrl(KAKAO_MAP_URL);
-            if(appointment.getAddressDetail() != null) {
-                appointmentMainResponseDto.setFullAddress(getAddress(appointment.getLongitude(),
-                        appointment.getLatitude()) + appointment.getAddressDetail());
-            } else {
-                appointmentMainResponseDto.setFullAddress(getAddress(appointment.getLongitude(), appointment.getLatitude()));
-            }
+            String FULL_ADDRESS = getAddress(appointment.getLongitude(), appointment.getLatitude()) +
+                    " " + appointment.getAddressDetail();
+            appointmentMainResponseDto.setFullAddress(FULL_ADDRESS);
 
             appointmentMainResponseDto.setTargetUserEmail(appointment.getVisitor().getEmail());
 
@@ -138,9 +165,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                     appointmentMainResponseDto.setCancel(false);
                 case CANCELED_WITH_ACCEPTED:
                     if(appointment.getRequestCancelUserType().equals(UserType.DOMESTIC)) {
-                        STATUS_STRING = "취소 됨, 본인 요청(" + appointment.getCanceledAcceptAt().format(formatDate) + ")";
+                        STATUS_STRING = "취소 됨, 본인 요청(" + FORMAT_DATE_TO_STRING_YMDE(appointment.getCanceledAcceptAt()) + ")";
                     } else {
-                        STATUS_STRING = "취소 됨, 타인 요청(" + appointment.getCanceledAcceptAt().format(formatDate) + ")";
+                        STATUS_STRING = "취소 됨, 타인 요청(" + FORMAT_DATE_TO_STRING_YMDE(appointment.getCanceledAcceptAt()) + ")";
                     }
                     appointmentMainResponseDto.setDone(false);
                     appointmentMainResponseDto.setCancel(true);
@@ -160,12 +187,111 @@ public class AppointmentServiceImpl implements AppointmentService {
 
             appointmentMainResponseDto.setStatus(STATUS_STRING);
 
-            appointmentMainResponseDto.setCreateAt(appointment.getCreateAt().format(formatDate));
+            appointmentMainResponseDto.setCreateAt(FORMAT_DATE_TO_STRING_YMDE(appointment.getCreateAt()));
             appointmentMainResponseDto.setChatRoomId(appointment.getChatRoom().getRoomId());
 
             appointmentMainResponseDtoList.add(appointmentMainResponseDto);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(appointmentMainResponseDtoList);
+    }
+
+    @Override
+    public ResponseEntity<AppointmentReceiptResponseDto> getAppointmentReceiptInfo(Long userId, Long appointmentId) {
+        User user = userDao.getUserEntity(userId);
+        AppointmentReceiptResponseDto appointmentReceiptResponseDto = new AppointmentReceiptResponseDto();
+        Appointment appointment = appointmentDao.getAppointmentEntity(appointmentId);
+
+        if(!appointment.getGuide().equals(user) || !appointment.getVisitor().equals(user)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        appointmentReceiptResponseDto.setUuid(appointment.getUuid());
+        appointmentReceiptResponseDto.setCreateAt(
+                FORMAT_DATE_TO_STRING_YMDEHM(appointment.getCreateAt())
+        );
+        appointmentReceiptResponseDto.setModifyAt(
+                FORMAT_DATE_TO_STRING_YMDEHM(appointment.getModifyAt())
+        );
+        appointmentReceiptResponseDto.setStartDate(
+                FORMAT_DATE_TO_STRING_YMDE(appointment.getStartAt())
+        );
+        appointmentReceiptResponseDto.setEndDate(
+                FORMAT_DATE_TO_STRING_YMDE(appointment.getEndAt())
+        );
+        appointmentReceiptResponseDto.setStartTime(
+                FORMAT_DATE_TO_STRING_HM(appointment.getStartAt())
+        );
+        appointmentReceiptResponseDto.setEndTime(
+                FORMAT_DATE_TO_STRING_HM(appointment.getEndAt())
+        );
+        appointmentReceiptResponseDto.setRequestUserProfileUrl(appointment.getGuide().getProfileUrl());
+        appointmentReceiptResponseDto.setRequestUserNickname(appointment.getGuide().getNickname());
+        appointmentReceiptResponseDto.setTargetUserProfileUrl(appointment.getVisitor().getProfileUrl());
+        appointmentReceiptResponseDto.setTargetUserNickname(appointment.getVisitor().getNickname());
+
+        if(appointment.getRequestCancelAt() != null) {
+            appointmentReceiptResponseDto.setCancelRequestExist(true);
+            appointmentReceiptResponseDto.setCancelRequestAt(
+                    FORMAT_DATE_TO_STRING_YMDEHM(appointment.getRequestCancelAt())
+            );
+
+            switch (appointment.getRequestCancelUserType()) {
+                case DOMESTIC:
+                    appointmentReceiptResponseDto.setCancelRequestUserProfileUrl(
+                            appointment.getGuide().getProfileUrl()
+                    );
+                    appointmentReceiptResponseDto.setCancelRequestUserNickname(
+                            appointment.getGuide().getNickname()
+                    );
+                case FOREIGNTER:
+                    appointmentReceiptResponseDto.setCancelRequestUserProfileUrl(
+                            appointment.getVisitor().getProfileUrl()
+                    );
+                    appointmentReceiptResponseDto.setCancelRequestUserNickname(
+                            appointment.getVisitor().getNickname()
+                    );
+            }
+        } else {
+            appointmentReceiptResponseDto.setCancelRequestExist(false);
+            appointmentReceiptResponseDto.setCancelRequestUserProfileUrl(null);
+            appointmentReceiptResponseDto.setCancelRequestUserNickname(null);
+            appointmentReceiptResponseDto.setCancelRequestAt(null);
+        }
+
+        appointmentReceiptResponseDto.setAcceptAt(
+                FORMAT_DATE_TO_STRING_YMDEHM(appointment.getAcceptAt())
+        );
+
+        appointmentReceiptResponseDto.setAirlineInfo(appointment.getAirlineInfo());
+
+
+
+        return ResponseEntity.status(HttpStatus.OK).body(appointmentReceiptResponseDto);
+    }
+
+    @Override
+    public void createTestAppointment(Long userId) {
+        appointmentDao.saveAppointmentEntity(Appointment.builder()
+                        .uuid("1E31FD")
+                        .createAt(LocalDateTime.now())
+                        .startAt(LocalDateTime.now())
+                        .endAt(LocalDateTime.now())
+                        .modifyAt(LocalDateTime.now())
+                        .acceptAt(LocalDateTime.now())
+                        .isAccept(true)
+                        .airlineInfo("K123")
+                        .track(trackDao.getTrackEntity(4L))
+                        .credit(190000L)
+                        .depositPercent(20L)
+                        .depositCredit((long) (190000 + 190000 * 20 / 100))
+                        .chatRoom(chatDao.getChatRoomEntity("722f4d64-4ed7-45ad-9cbe-09efc3a76258"))
+                        .latitude(37.555946)
+                        .longitude(126.972317)
+                        .addressDetail("1번출구 앞")
+                        .appointmentStatus(AppointmentStatus.WAITING_OFFLINE_MEETING)
+                        .guide(userDao.getUserEntity(userId))
+                        .visitor(userDao.getUserEntity(2L))
+                .build());
     }
 }
