@@ -82,7 +82,6 @@ public class AppointmentServiceImpl implements AppointmentService {
             JsonNode documents = rootNode.path("documents");
             JsonNode roadAddress = documents.get(0).path("address");
 
-            System.out.println(roadAddress.path("address_name").asText());
             return roadAddress.path("address_name").asText();
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -96,11 +95,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         Appointment appointment = appointmentDao.getAppointmentEntity(appointmentId);
 
-        if(!appointment.getGuide().equals(user) || !appointment.getVisitor().equals(user)) {
+        if(!appointment.getGuide().equals(user)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("사용자의 일정이 아닙니다.");
         }
 
-        if(appointment.getRequestCancelUserType() == null || appointment.isCanceled() ||
+        if(appointment.getRequestCancelUserType() != null || appointment.isCanceled() ||
         appointment.getAppointmentStatus().equals(AppointmentStatus.PENDING_CANCEL) ||
                 appointment.getAppointmentStatus().equals(AppointmentStatus.CANCELED_WITH_ACCEPTED)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 취소되었거나 취소 요청 중인 일정입니다.");
@@ -163,6 +162,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                     STATUS_STRING = "약속 취소 요청 대기 중";
                     appointmentMainResponseDto.setDone(false);
                     appointmentMainResponseDto.setCancel(false);
+                    break;
                 case CANCELED_WITH_ACCEPTED:
                     if(appointment.getRequestCancelUserType().equals(UserType.DOMESTIC)) {
                         STATUS_STRING = "취소 됨, 본인 요청(" + FORMAT_DATE_TO_STRING_YMDE(appointment.getCanceledAcceptAt()) + ")";
@@ -171,18 +171,22 @@ public class AppointmentServiceImpl implements AppointmentService {
                     }
                     appointmentMainResponseDto.setDone(false);
                     appointmentMainResponseDto.setCancel(true);
+                    break;
                 case WAITING_OFFLINE_MEETING:
                     appointmentMainResponseDto.setDone(false);
                     appointmentMainResponseDto.setCancel(false);
                     STATUS_STRING = "오프라인 만남 대기 중";
+                    break;
                 case DONE:
                     appointmentMainResponseDto.setDone(true);
                     appointmentMainResponseDto.setCancel(false);
                     STATUS_STRING = "완료됨";
+                    break;
                 default:
                     appointmentMainResponseDto.setDone(false);
                     appointmentMainResponseDto.setCancel(false);
                     STATUS_STRING = "상태를 조회할 수 없음";
+                    break;
             }
 
             appointmentMainResponseDto.setStatus(STATUS_STRING);
@@ -202,7 +206,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         AppointmentReceiptResponseDto appointmentReceiptResponseDto = new AppointmentReceiptResponseDto();
         Appointment appointment = appointmentDao.getAppointmentEntity(appointmentId);
 
-        if(!appointment.getGuide().equals(user) || !appointment.getVisitor().equals(user)) {
+        if(!appointment.getGuide().equals(user)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -244,6 +248,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                     appointmentReceiptResponseDto.setCancelRequestUserNickname(
                             appointment.getGuide().getNickname()
                     );
+                    break;
                 case FOREIGNTER:
                     appointmentReceiptResponseDto.setCancelRequestUserProfileUrl(
                             appointment.getVisitor().getProfileUrl()
@@ -251,6 +256,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                     appointmentReceiptResponseDto.setCancelRequestUserNickname(
                             appointment.getVisitor().getNickname()
                     );
+                    break;
             }
         } else {
             appointmentReceiptResponseDto.setCancelRequestExist(false);
@@ -264,8 +270,18 @@ public class AppointmentServiceImpl implements AppointmentService {
         );
 
         appointmentReceiptResponseDto.setAirlineInfo(appointment.getAirlineInfo());
-
-
+        appointmentReceiptResponseDto.setTargetTrackName(appointment.getTrack().getTrackTitle());
+        String KAKAO_MAP_URL = "https://map.kakao.com/link/map/" + appointment.getLatitude() + ","
+                + appointment.getLongitude();
+        appointmentReceiptResponseDto.setKakaoMapUrl(KAKAO_MAP_URL);
+        String FULL_ADDRESS = getAddress(appointment.getLongitude(), appointment.getLatitude()) +
+                " " + appointment.getAddressDetail();
+        appointmentReceiptResponseDto.setFullAddress(FULL_ADDRESS);
+        appointmentReceiptResponseDto.setMeetAt(FORMAT_DATE_TO_STRING_YMDEHM(appointment.getStartAt()));
+        appointmentReceiptResponseDto.setCredit(appointment.getCredit());
+        appointmentReceiptResponseDto.setDepositPercent(appointment.getDepositPercent());
+        appointmentReceiptResponseDto.setDepositCredit(appointment.getCredit() +
+                appointment.getCredit() * appointment.getDepositPercent() / 100);
 
         return ResponseEntity.status(HttpStatus.OK).body(appointmentReceiptResponseDto);
     }
