@@ -47,6 +47,7 @@ public class ChatController {
         return chatService.getChatList(jwtTokenProvider.getUserIdByToken(request.getHeader("X-AUTH-TOKEN")));
     }
 
+    @Deprecated
     @ApiOperation(value = "채팅 메시지 조회(미사용)")
     @GetMapping("/")
     public ResponseEntity<List<ChatResponseDto>> getChatMsg(@RequestParam String roomId, @PageableDefault(size = 10) Pageable pageable) {

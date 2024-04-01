@@ -9,6 +9,7 @@ import com.koreanguide.koreanguidebackend.domain.chat.data.dto.response.ChatResp
 import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatMessage;
 import com.koreanguide.koreanguidebackend.domain.chat.data.entity.ChatRoom;
 import com.koreanguide.koreanguidebackend.domain.chat.service.ChatService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class ChatServiceImpl implements ChatService {
     private final UserDao userDao;
     private final ChatDao chatDao;
@@ -77,7 +79,13 @@ public class ChatServiceImpl implements ChatService {
 
         for(ChatRoom chatRoom : chatRoomList) {
             List<ChatMessage> chatMessageList = chatDao.getChatMessageEntity(chatRoom);
-            User targetUser = chatRoom.getSender() != chatRoom.getSender() ? user : chatRoom.getRecipient();
+            User targetUser;
+            if(chatRoom.getSender().equals(user)) {
+                targetUser = chatRoom.getRecipient();
+            } else {
+                targetUser = chatRoom.getSender();
+            }
+
             ChatListResponseDto chatListResponseDto = new ChatListResponseDto();
             chatListResponseDto.setName(targetUser.getNickname());
             if(chatMessageList.isEmpty()) {
