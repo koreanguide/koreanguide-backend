@@ -1,7 +1,7 @@
 package com.koreanguide.koreanguidebackend.domain.appointment.data.dao.Impl;
 
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dao.AppointmentDao;
-import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.entity.Appointment;
+import com.koreanguide.koreanguidebackend.domain.appointment.data.entity.Appointment;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.repository.AppointmentRepository;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import lombok.RequiredArgsConstructor;

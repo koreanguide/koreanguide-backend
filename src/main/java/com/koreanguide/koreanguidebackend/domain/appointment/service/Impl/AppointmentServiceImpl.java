@@ -3,7 +3,7 @@ package com.koreanguide.koreanguidebackend.domain.appointment.service.Impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dao.AppointmentDao;
-import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.entity.Appointment;
+import com.koreanguide.koreanguidebackend.domain.appointment.data.entity.Appointment;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.response.AppointmentMainResponseDto;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.response.AppointmentReceiptResponseDto;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.enums.AppointmentStatus;

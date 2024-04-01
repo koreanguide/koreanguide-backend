@@ -1,4 +1,4 @@
-package com.koreanguide.koreanguidebackend.domain.appointment.data.dto.entity;
+package com.koreanguide.koreanguidebackend.domain.appointment.data.entity;
 
 import com.koreanguide.koreanguidebackend.domain.appointment.data.enums.AppointmentStatus;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;

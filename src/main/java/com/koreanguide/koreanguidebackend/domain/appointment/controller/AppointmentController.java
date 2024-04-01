@@ -3,6 +3,7 @@ package com.koreanguide.koreanguidebackend.domain.appointment.controller;
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.dto.response.AppointmentMainResponseDto;
 import com.koreanguide.koreanguidebackend.domain.appointment.service.AppointmentService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
+@Api(tags = {"Appointment API"})
 @RestController
 @RequestMapping("/api/v1/appointment")
 @RequiredArgsConstructor
