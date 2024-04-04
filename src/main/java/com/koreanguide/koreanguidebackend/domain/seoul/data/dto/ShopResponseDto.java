@@ -1,4 +1,4 @@
-package com.koreanguide.koreanguidebackend.domain.seoul.data;
+package com.koreanguide.koreanguidebackend.domain.seoul.data.dto;
 
 import lombok.Builder;
 import lombok.Data;
