@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
+import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.AttractionsResponseDto;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.WeatherResponseDto;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.enums.DustInfo;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.ShopResponseDto;
@@ -36,11 +37,13 @@ public class SeoulServiceImpl implements SeoulService {
     private final UserDao userDao;
     private String SEOUL_API_KEY;
     private String SEOUL_SHOPPING_CENTER_LIST_API;
+    private String SEOUL_ATTRACTIONS_LIST_API;
     private String SEOUL_DUST_INFO_API;
 
     public SeoulServiceImpl(UserDao userDao, @Value("${seoul.api.key}") String SEOUL_API_KEY) {
         this.userDao = userDao;
         this.SEOUL_API_KEY = SEOUL_API_KEY;
+        this.SEOUL_ATTRACTIONS_LIST_API = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/SebcTourStreetKor/1/1000/";
         this.SEOUL_SHOPPING_CENTER_LIST_API = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/SebcShoppingCenterKor/1/1000/";
         this.SEOUL_DUST_INFO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/ListAirQualityByDistrictService/1/5/";
     }
@@ -493,6 +496,34 @@ public class SeoulServiceImpl implements SeoulService {
             }
 
             return ResponseEntity.status(HttpStatus.OK).body(shopResponseDtoList);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
+        }
+    }
+
+    @Override
+    public ResponseEntity<List<AttractionsResponseDto>> getAttractionsList(SeoulCountry seoulCountry) {
+        try {
+            List<AttractionsResponseDto> attractionsResponseDtoList = new ArrayList<>();
+            ObjectMapper mapper = new ObjectMapper();
+
+            JsonNode root = mapper.readTree(new URL(SEOUL_ATTRACTIONS_LIST_API));
+            JsonNode rows = root.path("SebcTourStreetKor").path("row");
+
+            for (JsonNode row : rows) {
+                String hKorGu = row.path("H_KOR_GU").asText();
+                if (getSeoulCountryName(seoulCountry).equals(hKorGu)) {
+                    attractionsResponseDtoList.add(AttractionsResponseDto.builder()
+                            .latitude(row.get("WGS84_X").asDouble())
+                            .longitude(row.get("WGS84_Y").asDouble())
+                            .address(row.get("ADD_KOR").asText())
+                            .tag(row.get("LAW_HEMD").asText())
+                            .title(row.get("NAME_KOR").asText())
+                    .build());
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(attractionsResponseDtoList);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         }

@@ -2,6 +2,7 @@ package com.koreanguide.koreanguidebackend.domain.seoul.controller;
 
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
+import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.AttractionsResponseDto;
 import com.koreanguide.koreanguidebackend.domain.seoul.service.SeoulService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.List;
 
 @Api(tags = {"Seoul API"})
 @RestController
@@ -33,6 +35,12 @@ public class SeoulController {
     @ApiOperation(value = "쇼핑몰 리스트 조회")
     public ResponseEntity<?> getSeoulShoppingList(@RequestParam SeoulCountry seoulCountry) {
         return seoulService.getSeoulShopList(seoulCountry);
+    }
+
+    @GetMapping("/attractions")
+    @ApiOperation(value = "관광거리 리스트 조회")
+    public ResponseEntity<List<AttractionsResponseDto>> getSeoulAttractionsList(@RequestParam SeoulCountry seoulCountry) {
+        return seoulService.getAttractionsList(seoulCountry);
     }
 
     @GetMapping("/weather")
