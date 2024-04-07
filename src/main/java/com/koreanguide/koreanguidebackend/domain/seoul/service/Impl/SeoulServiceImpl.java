@@ -345,20 +345,26 @@ public class SeoulServiceImpl implements SeoulService {
         String base_date;
         String base_time;
 
-        if (hour < 2) {
+        base_date = ADJUSTED_TIME.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        if (hour < 3) {
             ADJUSTED_TIME = ADJUSTED_TIME.minusDays(1);
             base_date = ADJUSTED_TIME.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
             base_time = "2300";
+        } else if (hour < 6) {
+            base_time = "0200";
+        } else if (hour < 9) {
+            base_time = "0500";
+        } else if (hour < 12) {
+            base_time = "0800";
+        } else if (hour < 15) {
+            base_time = "1100";
+        } else if (hour < 18) {
+            base_time = "1400";
+        } else if (hour < 21) {
+            base_time = "1700";
         } else {
-            base_date = ADJUSTED_TIME.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            int adjustedHour = hour - (hour % 3 == 0 ? 3 : hour % 3);
-            if (adjustedHour == 0) {
-                ADJUSTED_TIME = ADJUSTED_TIME.minusDays(1);
-                base_date = ADJUSTED_TIME.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                base_time = "2300";
-            } else {
-                base_time = String.format("%02d00", adjustedHour);
-            }
+            base_time = "2000";
         }
 
         String urlBuilder = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst" + "?" + URLEncoder.encode("serviceKey", StandardCharsets.UTF_8) + "=z2I9YCbpCq1a5T%2BxmhqssSL3zWq2IVBTYusxgVlwvOR3kwy9vgokbtJ8xRuArqGZ27DClJUkfIGdP9KGZvH%2FFw%3D%3D" +
