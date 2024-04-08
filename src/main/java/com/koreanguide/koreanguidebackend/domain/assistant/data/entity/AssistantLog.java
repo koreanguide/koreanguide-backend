@@ -21,7 +21,7 @@ public class AssistantLog {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String question;
 
     @Column(nullable = false, columnDefinition = "TEXT")

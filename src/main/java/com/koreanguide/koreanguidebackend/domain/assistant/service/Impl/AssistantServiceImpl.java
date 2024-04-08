@@ -27,13 +27,18 @@ public class AssistantServiceImpl implements AssistantService {
 
     private final AssistantDao assistantDao;
     private final UserDao userDao;
+    private String SYSTEM_CONTENTS = "이 서비스는 한국에 방문하는 외국인과 실제 한국인이 만나서 한국에 대해 깊이 소개해줄 수 있는 매칭 서" +
+            "비스야. 너는 사용자가 요청한 대로 외국인이 이해하기 쉽게 소개 글을 적어줘야 해. 그리고 기본적으로 한국" +
+            "어로 적고, 사용자가 요청할 때만 영어로 적어줘";
+
 
     public AssistantServiceImpl(AssistantDao assistantDao, UserDao userDao) {
         this.assistantDao = assistantDao;
         this.userDao = userDao;
     }
 
-    public JsonNode callChatGpt(String userMsg) throws JsonProcessingException {
+    @Override
+    public JsonNode callChatGpt(String systemContents, String userContents) throws JsonProcessingException {
         final String url = "https://api.openai.com/v1/chat/completions";
 
         HttpHeaders headers = new HttpHeaders();
@@ -49,15 +54,12 @@ public class AssistantServiceImpl implements AssistantService {
         List<Map<String, String>> messages = new ArrayList<>();
         Map<String, String> userMessage = new HashMap<>();
         userMessage.put("role", "user");
-        userMessage.put("content", userMsg);
+        userMessage.put("content", userContents);
         messages.add(userMessage);
 
         Map<String, String> assistantMessage = new HashMap<>();
         assistantMessage.put("role", "system");
-        assistantMessage.put("content", "이 서비스는 한국에 방문하는 외국인과 실제 한국인이 만나서 한국에 대해" +
-                " 깊이 소개해줄 수 있는 매칭 서비스야." +
-                "너는 사용자가 요청한 대로 외국인이 이해하기 쉽게 소개 글을 적어줘야 해" +
-                "그리고 기본적으로 한국어로 적고, 사용자가 요청할 때만 영어로 적어줘");
+        assistantMessage.put("content", systemContents);
         messages.add(assistantMessage);
 
         bodyMap.put("messages", messages);
@@ -73,20 +75,25 @@ public class AssistantServiceImpl implements AssistantService {
     }
 
     @Override
-    public ResponseEntity<?> getAssistantMsg(Long userId, AssistantRequestDto assistantRequestDto) throws JsonProcessingException {
+    public void saveAssistantLog(String msg, JsonNode jsonNode, Long userId) {
         User user = userDao.getUserEntity(userId);
-        JsonNode jsonNode = callChatGpt(assistantRequestDto.getMsg());
+        assistantDao.saveAssistantLogEntity(AssistantLog.builder()
+                .question(msg)
+                .answer(jsonNode.path("choices").get(0).path("message").path("content").asText())
+                .promptTokens(Long.valueOf(jsonNode.path("usage").path("prompt_tokens").asText()))
+                .completionTokens(Long.valueOf(jsonNode.path("usage").path("completion_tokens").asText()))
+                .totalTokens(Long.valueOf(jsonNode.path("usage").path("total_tokens").asText()))
+                .usedAt(LocalDateTime.now())
+                .user(user)
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<?> getAssistantMsg(Long userId, AssistantRequestDto assistantRequestDto) throws JsonProcessingException {
+        JsonNode jsonNode = callChatGpt(SYSTEM_CONTENTS, assistantRequestDto.getMsg());
         String GPT_ANSWER = jsonNode.path("choices").get(0).path("message").path("content").asText();
 
-        assistantDao.saveAssistantLogEntity(AssistantLog.builder()
-                        .question(assistantRequestDto.getMsg())
-                        .answer(GPT_ANSWER)
-                        .promptTokens(Long.valueOf(jsonNode.path("usage").path("prompt_tokens").asText()))
-                        .completionTokens(Long.valueOf(jsonNode.path("usage").path("completion_tokens").asText()))
-                        .totalTokens(Long.valueOf(jsonNode.path("usage").path("total_tokens").asText()))
-                        .usedAt(LocalDateTime.now())
-                        .user(user)
-                .build());
+        saveAssistantLog(assistantRequestDto.getMsg(), jsonNode, userId);
 
         return ResponseEntity.status(HttpStatus.OK).body(AssistantResponseDto.builder()
                         .msg(GPT_ANSWER)
