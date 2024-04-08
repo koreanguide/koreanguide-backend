@@ -296,7 +296,19 @@ public class SeoulServiceImpl implements SeoulService {
         return country;
     }
 
-    public DustInfo CONVERT_DUST_DATA(int data) {
+    public DustInfo CONVERT_FINE_DUST_DATA(int data) {
+        if(data >= 0 && data <= 30) {
+            return DustInfo.GOOD;
+        } else if (data > 30 && data <= 80) {
+            return DustInfo.NORMAL;
+        } else if (data > 80 && data <= 150) {
+            return DustInfo.BAD;
+        } else {
+            return DustInfo.WORST;
+        }
+    }
+
+    public DustInfo CONVERT_ULTRA_FINE_DUST_DATA(int data) {
         if(data >= 0 && data <= 15) {
             return DustInfo.GOOD;
         } else if (data > 15 && data <= 35) {
@@ -326,8 +338,8 @@ public class SeoulServiceImpl implements SeoulService {
             }
 
             return DustData.builder()
-                        .fineDust(CONVERT_DUST_DATA(PM_10_DATA))
-                        .ultraFineDust(CONVERT_DUST_DATA(PM_25_DATA))
+                        .fineDust(CONVERT_FINE_DUST_DATA(PM_10_DATA))
+                        .ultraFineDust(CONVERT_ULTRA_FINE_DUST_DATA(PM_25_DATA))
                     .build();
 
         } catch (IOException e) {
