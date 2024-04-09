@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.AttractionsResponseDto;
+import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.BicycleResponseDto;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.GeneratedTrackRequestDto;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.GeneratedTrackResponseDto;
 import com.koreanguide.koreanguidebackend.domain.seoul.service.SeoulService;
@@ -37,10 +38,22 @@ public class SeoulController {
         return seoulService.getSeoulShopList(seoulCountry);
     }
 
+    @GetMapping("/food")
+    @ApiOperation(value = "관광음식 리스트 조회")
+    public ResponseEntity<?> getSeoulFoodList(@RequestParam SeoulCountry seoulCountry) {
+        return seoulService.getSeoulFoodList(seoulCountry);
+    }
+
     @GetMapping("/attractions")
     @ApiOperation(value = "관광거리 리스트 조회")
     public ResponseEntity<List<AttractionsResponseDto>> getSeoulAttractionsList(@RequestParam SeoulCountry seoulCountry) {
         return seoulService.getAttractionsList(seoulCountry);
+    }
+
+    @GetMapping("/bicycle")
+    @ApiOperation(value = "따릉이 리스트 조회")
+    public ResponseEntity<List<BicycleResponseDto>> getSeoulBicycleList(@RequestParam SeoulCountry seoulCountry) {
+        return seoulService.getSeoulBicycleList(seoulCountry);
     }
 
     @GetMapping("/weather")

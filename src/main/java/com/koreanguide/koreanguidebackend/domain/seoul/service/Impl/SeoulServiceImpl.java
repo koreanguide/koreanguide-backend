@@ -44,6 +44,12 @@ public class SeoulServiceImpl implements SeoulService {
     private String SEOUL_API_KEY;
     private String SEOUL_SHOPPING_CENTER_LIST_API;
     private String SEOUL_ATTRACTIONS_LIST_API;
+    private String SEOUL_FOOD_LIST_API_1;
+    private String SEOUL_FOOD_LIST_API_2;
+    private String SEOUL_BICYCLE_LIST_API_1;
+    private String SEOUL_BICYCLE_LIST_API_2;
+    private String SEOUL_BICYCLE_LIST_API_3;
+    private String SEOUL_BICYCLE_LIST_API_4;
     private String SEOUL_DUST_INFO_API;
 
     public SeoulServiceImpl(UserDao userDao, AssistantService assistantService, SavedDao savedDao,
@@ -55,6 +61,12 @@ public class SeoulServiceImpl implements SeoulService {
         this.SEOUL_API_KEY = SEOUL_API_KEY;
         this.SEOUL_ATTRACTIONS_LIST_API = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/SebcTourStreetKor/1/1000/";
         this.SEOUL_SHOPPING_CENTER_LIST_API = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/SebcShoppingCenterKor/1/1000/";
+        this.SEOUL_FOOD_LIST_API_1 = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/SebcKoreanRestaurantsKor/1/1000/";
+        this.SEOUL_FOOD_LIST_API_2 = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/SebcKoreanRestaurantsKor/1001/1500/";
+        this.SEOUL_BICYCLE_LIST_API_1 = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/tbCycleStationInfo/1/1000/";
+        this.SEOUL_BICYCLE_LIST_API_2 = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/tbCycleStationInfo/1001/2000/";
+        this.SEOUL_BICYCLE_LIST_API_3 = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/tbCycleStationInfo/2001/3000/";
+        this.SEOUL_BICYCLE_LIST_API_4 = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/tbCycleStationInfo/3001/4000/";
         this.SEOUL_DUST_INFO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/ListAirQualityByDistrictService/1/5/";
     }
 
@@ -362,6 +374,10 @@ public class SeoulServiceImpl implements SeoulService {
         }
     }
 
+    public String CONVERT_COORDINATE_TO_KAKAO_MAP_URL(String LAT, String LONG) {
+        return "https://map.kakao.com/link/map/" + LAT + "," + LONG;
+    }
+
     public DustData CALL_DUST_DATA(SeoulCountry seoulCountry) {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -603,6 +619,138 @@ public class SeoulServiceImpl implements SeoulService {
             }
 
             return ResponseEntity.status(HttpStatus.OK).body(shopResponseDtoList);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getSeoulFoodList(SeoulCountry seoulCountry) {
+        try {
+            List<ShopResponseDto> shopResponseDtoList = new ArrayList<>();
+            ObjectMapper mapper = new ObjectMapper();
+
+            JsonNode JSON_NODE_FIRST_PAGE = mapper.readTree(new URL(SEOUL_FOOD_LIST_API_1));
+            JsonNode JSON_NODE_FIRST_PAGE_ROWS = JSON_NODE_FIRST_PAGE.path("SebcKoreanRestaurantsKor").path("row");
+
+            JsonNode JSON_NODE_SECOND_PAGE = mapper.readTree(new URL(SEOUL_FOOD_LIST_API_2));
+            JsonNode JSON_NODE_SECOND_PAGE_ROWS = JSON_NODE_SECOND_PAGE.path("SebcKoreanRestaurantsKor").path("row");
+
+            for (JsonNode row : JSON_NODE_FIRST_PAGE_ROWS) {
+                String hKorGu = row.path("H_KOR_GU").asText();
+                if (getSeoulCountryName(seoulCountry).equals(hKorGu)) {
+                    shopResponseDtoList.add(ShopResponseDto.builder()
+                            .nameKor(row.get("NAME_KOR").asText())
+                            .cate2Name(row.get("CATE2_NAME").asText())
+                            .cate3Name(row.get("CATE3_NAME").asText())
+                            .address(
+                                    row.get("H_KOR_CITY").asText() + " " + row.get("H_KOR_GU").asText()
+                                            + " " + row.get("H_KOR_DONG").asText()
+                            )
+                            .build());
+                }
+            }
+
+            for (JsonNode row : JSON_NODE_SECOND_PAGE_ROWS) {
+                String hKorGu = row.path("H_KOR_GU").asText();
+                if (getSeoulCountryName(seoulCountry).equals(hKorGu)) {
+                    shopResponseDtoList.add(ShopResponseDto.builder()
+                            .nameKor(row.get("NAME_KOR").asText())
+                            .cate2Name(row.get("CATE2_NAME").asText())
+                            .cate3Name(row.get("CATE3_NAME").asText())
+                            .address(
+                                    row.get("H_KOR_CITY").asText() + " " + row.get("H_KOR_GU").asText()
+                                            + " " + row.get("H_KOR_DONG").asText()
+                            )
+                            .build());
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(shopResponseDtoList);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
+        }
+    }
+
+    @Override
+    public ResponseEntity<List<BicycleResponseDto>> getSeoulBicycleList(SeoulCountry seoulCountry) {
+        try {
+            List<BicycleResponseDto> bicycleResponseDtoList = new ArrayList<>();
+            ObjectMapper mapper = new ObjectMapper();
+
+            JsonNode JSON_NODE_FIRST_PAGE = mapper.readTree(new URL(SEOUL_BICYCLE_LIST_API_1));
+            JsonNode JSON_NODE_FIRST_PAGE_ROWS = JSON_NODE_FIRST_PAGE.path("stationInfo").path("row");
+
+            JsonNode JSON_NODE_SECOND_PAGE = mapper.readTree(new URL(SEOUL_BICYCLE_LIST_API_2));
+            JsonNode JSON_NODE_SECOND_PAGE_ROWS = JSON_NODE_SECOND_PAGE.path("stationInfo").path("row");
+
+            JsonNode JSON_NODE_THIRD_PAGE = mapper.readTree(new URL(SEOUL_BICYCLE_LIST_API_3));
+            JsonNode JSON_NODE_THIRD_PAGE_ROWS = JSON_NODE_THIRD_PAGE.path("stationInfo").path("row");
+
+            JsonNode JSON_NODE_FOURTH_PAGE = mapper.readTree(new URL(SEOUL_BICYCLE_LIST_API_4));
+            JsonNode JSON_NODE_FOURTH_PAGE_ROWS = JSON_NODE_FOURTH_PAGE.path("stationInfo").path("row");
+
+            for (JsonNode row : JSON_NODE_FIRST_PAGE_ROWS) {
+                String hKorGu = row.path("STA_LOC").asText();
+                if (getSeoulCountryName(seoulCountry).equals(hKorGu)) {
+                    bicycleResponseDtoList.add(BicycleResponseDto.builder()
+                                .code(row.get("RENT_NO").asText())
+                                .count(row.get("HOLD_NUM").asText())
+                                .name(row.get("RENT_NM").asText())
+                                .address(row.get("STA_ADD1").asText() + " " + row.get("STA_ADD2").asText())
+                                .kakaoMapUrl(CONVERT_COORDINATE_TO_KAKAO_MAP_URL(
+                                        row.get("STA_LAT").asText(), row.get("STA_LONG").asText())
+                                )
+                            .build());
+                }
+            }
+
+            for (JsonNode row : JSON_NODE_SECOND_PAGE_ROWS) {
+                String hKorGu = row.path("STA_LOC").asText();
+                if (getSeoulCountryName(seoulCountry).equals(hKorGu)) {
+                    bicycleResponseDtoList.add(BicycleResponseDto.builder()
+                            .code(row.get("RENT_NO").asText())
+                            .count(row.get("HOLD_NUM").asText())
+                            .name(row.get("RENT_NM").asText())
+                            .address(row.get("STA_ADD1").asText() + " " + row.get("STA_ADD2").asText())
+                            .kakaoMapUrl(CONVERT_COORDINATE_TO_KAKAO_MAP_URL(
+                                    row.get("STA_LAT").asText(), row.get("STA_LONG").asText())
+                            )
+                            .build());
+                }
+            }
+
+            for (JsonNode row : JSON_NODE_THIRD_PAGE_ROWS) {
+                String hKorGu = row.path("STA_LOC").asText();
+                if (getSeoulCountryName(seoulCountry).equals(hKorGu)) {
+                    bicycleResponseDtoList.add(BicycleResponseDto.builder()
+                            .code(row.get("RENT_NO").asText())
+                            .count(row.get("HOLD_NUM").asText())
+                            .name(row.get("RENT_NM").asText())
+                            .address(row.get("STA_ADD1").asText() + " " + row.get("STA_ADD2").asText())
+                            .kakaoMapUrl(CONVERT_COORDINATE_TO_KAKAO_MAP_URL(
+                                    row.get("STA_LAT").asText(), row.get("STA_LONG").asText())
+                            )
+                            .build());
+                }
+            }
+
+            for (JsonNode row : JSON_NODE_FOURTH_PAGE_ROWS) {
+                String hKorGu = row.path("STA_LOC").asText();
+                if (getSeoulCountryName(seoulCountry).equals(hKorGu)) {
+                    bicycleResponseDtoList.add(BicycleResponseDto.builder()
+                            .code(row.get("RENT_NO").asText())
+                            .count(row.get("HOLD_NUM").asText())
+                            .name(row.get("RENT_NM").asText())
+                            .address(row.get("STA_ADD1").asText() + " " + row.get("STA_ADD2").asText())
+                            .kakaoMapUrl(CONVERT_COORDINATE_TO_KAKAO_MAP_URL(
+                                    row.get("STA_LAT").asText(), row.get("STA_LONG").asText())
+                            )
+                            .build());
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(bicycleResponseDtoList);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         }
