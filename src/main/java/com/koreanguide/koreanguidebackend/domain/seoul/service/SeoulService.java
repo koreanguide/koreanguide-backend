@@ -2,10 +2,7 @@ package com.koreanguide.koreanguidebackend.domain.seoul.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
-import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.AttractionsResponseDto;
-import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.BicycleResponseDto;
-import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.GeneratedTrackRequestDto;
-import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.GeneratedTrackResponseDto;
+import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.*;
 import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
@@ -22,4 +19,6 @@ public interface SeoulService {
     ResponseEntity<List<BicycleResponseDto>> getSeoulBicycleList(SeoulCountry seoulCountry);
 
     ResponseEntity<List<AttractionsResponseDto>> getAttractionsList(SeoulCountry seoulCountry);
+
+    ResponseEntity<ParkResponseDto> getSeoulRiverParkList(SeoulCountry seoulCountry);
 }

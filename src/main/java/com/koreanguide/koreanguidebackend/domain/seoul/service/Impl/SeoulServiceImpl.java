@@ -11,11 +11,13 @@ import com.koreanguide.koreanguidebackend.domain.saved.data.dao.SavedDao;
 import com.koreanguide.koreanguidebackend.domain.saved.data.entity.Saved;
 import com.koreanguide.koreanguidebackend.domain.saved.service.SavedService;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.*;
+import com.koreanguide.koreanguidebackend.domain.seoul.data.entity.SeoulRiverPark;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.enums.DustInfo;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.enums.SkyInfo;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.entity.DustData;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.entity.SeoulCoordinate;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.entity.WeatherData;
+import com.koreanguide.koreanguidebackend.domain.seoul.data.repository.SeoulRiverParkRepository;
 import com.koreanguide.koreanguidebackend.domain.seoul.service.SeoulService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -41,6 +43,7 @@ public class SeoulServiceImpl implements SeoulService {
     private final AssistantService assistantService;
     private final SavedDao savedDao;
     private final SavedService savedService;
+    private final SeoulRiverParkRepository seoulRiverParkRepository;
     private String SEOUL_API_KEY;
     private String SEOUL_SHOPPING_CENTER_LIST_API;
     private String SEOUL_ATTRACTIONS_LIST_API;
@@ -53,10 +56,12 @@ public class SeoulServiceImpl implements SeoulService {
     private String SEOUL_DUST_INFO_API;
 
     public SeoulServiceImpl(UserDao userDao, AssistantService assistantService, SavedDao savedDao,
+                            SeoulRiverParkRepository seoulRiverParkRepository,
                             SavedService savedService, @Value("${seoul.api.key}") String SEOUL_API_KEY) {
         this.userDao = userDao;
         this.assistantService = assistantService;
         this.savedDao = savedDao;
+        this.seoulRiverParkRepository = seoulRiverParkRepository;
         this.savedService = savedService;
         this.SEOUL_API_KEY = SEOUL_API_KEY;
         this.SEOUL_ATTRACTIONS_LIST_API = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/SebcTourStreetKor/1/1000/";
@@ -782,5 +787,34 @@ public class SeoulServiceImpl implements SeoulService {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         }
+    }
+
+    @Override
+    public ResponseEntity<ParkResponseDto> getSeoulRiverParkList(SeoulCountry seoulCountry) {
+        List<ParkListResponseDto> dataList = new ArrayList<>();
+        List<ParkListResponseDto> recomendList = new ArrayList<>();
+
+        List<SeoulRiverPark> seoulRiverParkList = seoulRiverParkRepository.findAll();
+
+        for(SeoulRiverPark seoulRiverPark : seoulRiverParkList) {
+            if(seoulRiverPark.getParkCountry().equals(seoulCountry)) {
+                dataList.add(ParkListResponseDto.builder()
+                                .name(seoulRiverPark.getParkKo())
+                                .address("서울특별시 " + seoulRiverPark.getParkAddress())
+                                .riverPark(seoulRiverPark.getParkEn())
+                        .build());
+            } else {
+                recomendList.add(ParkListResponseDto.builder()
+                        .name(seoulRiverPark.getParkKo())
+                        .address("서울특별시 " + seoulRiverPark.getParkAddress())
+                        .riverPark(seoulRiverPark.getParkEn())
+                        .build());
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(ParkResponseDto.builder()
+                        .data(dataList)
+                        .recommend(recomendList)
+                .build());
     }
 }

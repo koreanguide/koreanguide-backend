@@ -3,10 +3,7 @@ package com.koreanguide.koreanguidebackend.domain.seoul.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
-import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.AttractionsResponseDto;
-import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.BicycleResponseDto;
-import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.GeneratedTrackRequestDto;
-import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.GeneratedTrackResponseDto;
+import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.*;
 import com.koreanguide.koreanguidebackend.domain.seoul.service.SeoulService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -64,6 +61,12 @@ public class SeoulController {
     })
     public ResponseEntity<?> getSeoulWeather(HttpServletRequest request) throws IOException {
         return seoulService.getSeoulWeather(GET_USER_ID_BY_TOKEN(request));
+    }
+
+    @GetMapping("/park")
+    @ApiOperation(value = "한강공원 리스트 조회")
+    public ResponseEntity<ParkResponseDto> getSeoulRiverParkList(@RequestParam SeoulCountry seoulCountry) {
+        return seoulService.getSeoulRiverParkList(seoulCountry);
     }
 
     @PostMapping("/")
