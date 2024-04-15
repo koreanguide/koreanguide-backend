@@ -36,6 +36,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class SeoulServiceImpl implements SeoulService {
@@ -54,6 +56,31 @@ public class SeoulServiceImpl implements SeoulService {
     private String SEOUL_BICYCLE_LIST_API_3;
     private String SEOUL_BICYCLE_LIST_API_4;
     private String SEOUL_DUST_INFO_API;
+    private String SEOUL_KARAOKE_DONGDAEMUN_API;
+    private String SEOUL_KARAOKE_SEOCHO_API;
+    private String SEOUL_KARAOKE_GWANGJIN_API;
+    private String SEOUL_KARAOKE_SEONGDONG_API;
+    private String SEOUL_KARAOKE_NOWON_API;
+    private String SEOUL_KARAOKE_JUNGNANG_API;
+    private String SEOUL_KARAOKE_MAPO_API;
+    private String SEOUL_KARAOKE_GWANAK_API;
+    private String SEOUL_KARAOKE_KANGSEO_API;
+    private String SEOUL_KARAOKE_DOBONG_API;
+    private String SEOUL_KARAOKE_EUNPYEONG_API;
+    private String SEOUL_KARAOKE_GANGDONG_API;
+    private String SEOUL_KARAOKE_JUNG_API;
+    private String SEOUL_KARAOKE_YONGSAN_API;
+    private String SEOUL_KARAOKE_JONGNO_API;
+    private String SEOUL_KARAOKE_DONGJAK_API;
+    private String SEOUL_KARAOKE_YANGCHEON_API;
+    private String SEOUL_KARAOKE_SEODAEMUN_API;
+    private String SEOUL_KARAOKE_GANGBUK_API;
+    private String SEOUL_KARAOKE_SEONGBUK_API;
+    private String SEOUL_KARAOKE_GEUMCHEON_API;
+    private String SEOUL_KARAOKE_SONGPA_API;
+    private String SEOUL_KARAOKE_GURO_API;
+    private String SEOUL_KARAOKE_GANGNAM_API;
+    private String SEOUL_KARAOKE_YONGDENGPO_API;
 
     public SeoulServiceImpl(UserDao userDao, AssistantService assistantService, SavedDao savedDao,
                             SeoulRiverParkRepository seoulRiverParkRepository,
@@ -73,6 +100,30 @@ public class SeoulServiceImpl implements SeoulService {
         this.SEOUL_BICYCLE_LIST_API_3 = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/tbCycleStationInfo/2001/3000/";
         this.SEOUL_BICYCLE_LIST_API_4 = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/tbCycleStationInfo/3001/4000/";
         this.SEOUL_DUST_INFO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/ListAirQualityByDistrictService/1/5/";
+        this.SEOUL_KARAOKE_DONGDAEMUN_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_DD/1/1000/";
+        this.SEOUL_KARAOKE_SEOCHO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_SC/1/1000/";
+        this.SEOUL_KARAOKE_GWANGJIN_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_GJ/1/1000/";
+        this.SEOUL_KARAOKE_SEONGDONG_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_SD/1/1000/";
+        this.SEOUL_KARAOKE_JUNGNANG_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_JR/1/1000/";
+        this.SEOUL_KARAOKE_MAPO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_MP/1/1000/";
+        this.SEOUL_KARAOKE_GWANAK_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_GA/1/1000/";
+        this.SEOUL_KARAOKE_KANGSEO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_GS/1/1000/";
+        this.SEOUL_KARAOKE_DOBONG_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_DB/1/1000/";
+        this.SEOUL_KARAOKE_EUNPYEONG_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_EP/1/1000/";
+        this.SEOUL_KARAOKE_GANGDONG_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_GD/1/1000/";
+        this.SEOUL_KARAOKE_JUNG_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_JG/1/1000/";
+        this.SEOUL_KARAOKE_YONGSAN_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_YS/1/1000/";
+        this.SEOUL_KARAOKE_JONGNO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_JN/1/1000/";
+        this.SEOUL_KARAOKE_DONGJAK_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_DJ/1/1000/";
+        this.SEOUL_KARAOKE_YANGCHEON_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_YC/1/1000/";
+        this.SEOUL_KARAOKE_GANGBUK_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_GB/1/1000/";
+        this.SEOUL_KARAOKE_SEONGBUK_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_SB/1/1000/";
+        this.SEOUL_KARAOKE_GEUMCHEON_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_GC/1/1000/";
+        this.SEOUL_KARAOKE_SONGPA_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_SP/1/1000/";
+        this.SEOUL_KARAOKE_GURO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_GR/1/1000/";
+        this.SEOUL_KARAOKE_GANGNAM_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_GN/1/1000/";
+        this.SEOUL_KARAOKE_NOWON_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_NW/1/1000/";
+        this.SEOUL_KARAOKE_YONGDENGPO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_YD/1/1000/";
     }
 
     private String TRACK_AUTO_OPTIONS_HOTEL = "소개글 마지막에, 이 내용을 추가할거야. 강남구에 방문하시는 분들을 위해 호" +
@@ -98,12 +149,78 @@ public class SeoulServiceImpl implements SeoulService {
             "소개해 줄 수 있는 매칭 서비스야. 이 글에 대해서 간단한 소개글을 작성해 줄래? 소개글은 50자 이내로 작성해줘. " +
             "타이틀을 달 필요도 없고 그냥 본문만 작성해주면 돼.";
 
+    public String extractFromURL(String url) {
+        Pattern pattern = Pattern.compile("LOCALDATA_030901_(\\w+)/");
+        Matcher matcher = pattern.matcher(url);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
     public String GET_TRACK_AUTO_CONTENT(String category, String value, String address, boolean required) {
         String GENERATED_CONTENTS = "이 카테고리의 분류는 " + category + "이야." + "여기서 " + value + "라는 장소에 방문할거야." + "주소는 " + address + "이야.";
         if(!required) {
             return GENERATED_CONTENTS;
         } else {
             return GENERATED_CONTENTS + "이 곳은 반드시 관광객과 방문할거야.";
+        }
+    }
+
+    public String getKaraokeApiUrl(SeoulCountry seoulCountry) {
+        switch (seoulCountry) {
+            case DONGJAK:
+                return SEOUL_KARAOKE_DONGJAK_API;
+            case GURO:
+                return SEOUL_KARAOKE_GURO_API;
+            case JUNG:
+                return SEOUL_KARAOKE_JUNG_API;
+            case MAPO:
+                return SEOUL_KARAOKE_MAPO_API;
+            case NOWON:
+                return SEOUL_KARAOKE_NOWON_API;
+            case DOBONG:
+                return SEOUL_KARAOKE_DOBONG_API;
+            case GWANAK:
+                return SEOUL_KARAOKE_GWANAK_API;
+            case JONGNO:
+                return SEOUL_KARAOKE_JONGNO_API;
+            case SEOCHO:
+                return SEOUL_KARAOKE_SEOCHO_API;
+            case SONGPA:
+                return SEOUL_KARAOKE_SONGPA_API;
+            case GANGBUK:
+                return SEOUL_KARAOKE_GANGBUK_API;
+            case GANGSEO:
+                return SEOUL_KARAOKE_KANGSEO_API;
+            case YONGSAN:
+                return SEOUL_KARAOKE_YONGSAN_API;
+            case GANGDONG:
+                return SEOUL_KARAOKE_GANGDONG_API;
+            case GWANGJIN:
+                return SEOUL_KARAOKE_GWANGJIN_API;
+            case JUNGNANG:
+                return SEOUL_KARAOKE_JUNGNANG_API;
+            case SEONGBUK:
+                return SEOUL_KARAOKE_SEONGBUK_API;
+            case EUNPYEONG:
+                return SEOUL_KARAOKE_EUNPYEONG_API;
+            case GEUMCHEON:
+                return SEOUL_KARAOKE_GEUMCHEON_API;
+            case SEODAEMUN:
+                return SEOUL_KARAOKE_SEODAEMUN_API;
+            case SEONGDONG:
+                return SEOUL_KARAOKE_SEONGDONG_API;
+            case YANGCHEON:
+                return SEOUL_KARAOKE_YANGCHEON_API;
+            case DONGDAEMUN:
+                return SEOUL_KARAOKE_DONGDAEMUN_API;
+            case YONGDENGPO:
+                return SEOUL_KARAOKE_YONGDENGPO_API;
+            default:
+                return SEOUL_KARAOKE_GANGNAM_API;
         }
     }
 
@@ -596,6 +713,35 @@ public class SeoulServiceImpl implements SeoulService {
                     .build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getSeoulKaraokeList(SeoulCountry seoulCountry) {
+        try {
+            List<KaraokeResponseDto> karaokeResponseDtoList = new ArrayList<>();
+            ObjectMapper mapper = new ObjectMapper();
+
+            JsonNode root = mapper.readTree(new URL(getKaraokeApiUrl(seoulCountry)));
+            JsonNode rows = root.path("LOCALDATA_030901_" + extractFromURL(getKaraokeApiUrl(seoulCountry))).path("row");
+
+            for (JsonNode row : rows) {
+                String hKorGu = row.path("TRDSTATENM").asText();
+                if (hKorGu.equals("영업/정상")) {
+                    karaokeResponseDtoList.add(KaraokeResponseDto.builder()
+                            .address(row.get("SITEWHLADDR").asText())
+                            .name(row.get("BPLCNM").asText())
+                            .phoneNum(
+                                    row.get("SITETEL").asText().isEmpty() ? "정보없음" :
+                                            row.get("SITETEL").asText()
+                            )
+                            .build());
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(karaokeResponseDtoList);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         }
     }
 

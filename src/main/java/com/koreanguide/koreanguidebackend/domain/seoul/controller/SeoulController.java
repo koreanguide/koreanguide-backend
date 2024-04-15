@@ -35,6 +35,12 @@ public class SeoulController {
         return seoulService.getSeoulShopList(seoulCountry);
     }
 
+    @GetMapping("/karaoke")
+    @ApiOperation(value = "노래방 리스트 조회")
+    public ResponseEntity<?> getSeoulKaraokeList(@RequestParam SeoulCountry seoulCountry) {
+        return seoulService.getSeoulKaraokeList(seoulCountry);
+    }
+
     @GetMapping("/food")
     @ApiOperation(value = "관광음식 리스트 조회")
     public ResponseEntity<?> getSeoulFoodList(@RequestParam SeoulCountry seoulCountry) {
