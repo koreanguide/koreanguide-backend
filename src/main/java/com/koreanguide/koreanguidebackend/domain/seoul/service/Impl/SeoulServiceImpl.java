@@ -13,6 +13,7 @@ import com.koreanguide.koreanguidebackend.domain.saved.service.SavedService;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.*;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.entity.SeoulRiverPark;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.enums.DustInfo;
+import com.koreanguide.koreanguidebackend.domain.seoul.data.enums.RiverPark;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.enums.SkyInfo;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.entity.DustData;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.entity.SeoulCoordinate;
@@ -81,6 +82,7 @@ public class SeoulServiceImpl implements SeoulService {
     private String SEOUL_KARAOKE_GURO_API;
     private String SEOUL_KARAOKE_GANGNAM_API;
     private String SEOUL_KARAOKE_YONGDENGPO_API;
+    private String SEOUL_PARKING_API;
 
     public SeoulServiceImpl(UserDao userDao, AssistantService assistantService, SavedDao savedDao,
                             SeoulRiverParkRepository seoulRiverParkRepository,
@@ -124,6 +126,7 @@ public class SeoulServiceImpl implements SeoulService {
         this.SEOUL_KARAOKE_GANGNAM_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_GN/1/1000/";
         this.SEOUL_KARAOKE_NOWON_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_NW/1/1000/";
         this.SEOUL_KARAOKE_YONGDENGPO_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/LOCALDATA_030901_YD/1/1000/";
+        this.SEOUL_PARKING_API = "http://openAPI.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/TbParkingInfoView/1/30/";
     }
 
     private String TRACK_AUTO_OPTIONS_HOTEL = "소개글 마지막에, 이 내용을 추가할거야. 강남구에 방문하시는 분들을 위해 호" +
@@ -713,6 +716,50 @@ public class SeoulServiceImpl implements SeoulService {
                     .build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getRiverInfo(RiverPark riverPark) {
+        try {
+            SeoulRiverPark seoulRiverPark = seoulRiverParkRepository.getByParkEn(riverPark);
+            ParkInfoResponseDto parkInfoResponseDto = new ParkInfoResponseDto();
+            parkInfoResponseDto.setPhoneNum(seoulRiverPark.getParkService());
+            parkInfoResponseDto.setLength(seoulRiverPark.getParklength());
+            parkInfoResponseDto.setAddress(seoulRiverPark.getParkAddress());
+            parkInfoResponseDto.setArea(seoulRiverPark.getParkArea());
+            parkInfoResponseDto.setName(seoulRiverPark.getParkKo());
+            parkInfoResponseDto.setParkX(seoulRiverPark.getParkX());
+            parkInfoResponseDto.setParkY(seoulRiverPark.getParkY());
+
+            List<ParkParkingInfoResponseDto> parkParkingInfoResponseDtoList = new ArrayList<>();
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            JsonNode root = mapper.readTree(new URL(SEOUL_PARKING_API));
+            JsonNode rows = root.path("TbParkingInfoView").path("row");
+
+            for (JsonNode row : rows) {
+                String hKorGu = row.path("PARKING_DIV_CD").asText();
+                if (seoulRiverPark.getParkKo().equals(hKorGu)) {
+                    parkParkingInfoResponseDtoList.add(ParkParkingInfoResponseDto.builder()
+                                .name(row.get("PARKING_NM").asText())
+                                .address(row.get("ADDRESS").asText())
+                                .available(row.get("CELL_CNT").asText())
+                                .week(row.get("WDAYS_START_TM").asText() + "~" + row.get("WDAYS_END_TM").asText())
+                                .weekend(row.get("WEND_START_TM").asText() + "~" + row.get("WEND_END_TM").asText())
+                                .startFee(row.get("DFLT_AMT").asText())
+                                .additionalFee(row.get("INTVL_AMT").asText())
+                                .phoneNum(row.get("TEL_NO").asText())
+                            .build());
+                }
+            }
+
+            parkInfoResponseDto.setParkingData(parkParkingInfoResponseDtoList);
+
+            return ResponseEntity.status(HttpStatus.OK).body(parkInfoResponseDto);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         }
     }
 

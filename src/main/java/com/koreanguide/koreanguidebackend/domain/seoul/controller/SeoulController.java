@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.koreanguide.koreanguidebackend.config.security.JwtTokenProvider;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
 import com.koreanguide.koreanguidebackend.domain.seoul.data.dto.*;
+import com.koreanguide.koreanguidebackend.domain.seoul.data.enums.RiverPark;
 import com.koreanguide.koreanguidebackend.domain.seoul.service.SeoulService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -73,6 +74,12 @@ public class SeoulController {
     @ApiOperation(value = "한강공원 리스트 조회")
     public ResponseEntity<ParkResponseDto> getSeoulRiverParkList(@RequestParam SeoulCountry seoulCountry) {
         return seoulService.getSeoulRiverParkList(seoulCountry);
+    }
+
+    @GetMapping("/park/detail")
+    @ApiOperation(value = "한강공원 정보 조회")
+    public ResponseEntity<?> getSeoulParkInfo(@RequestParam RiverPark riverPark) {
+        return seoulService.getRiverInfo(riverPark);
     }
 
     @PostMapping("/")
