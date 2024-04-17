@@ -7,6 +7,7 @@ import com.koreanguide.koreanguidebackend.domain.assistant.service.AssistantServ
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
+import com.koreanguide.koreanguidebackend.domain.cache.CacheService;
 import com.koreanguide.koreanguidebackend.domain.saved.data.dao.SavedDao;
 import com.koreanguide.koreanguidebackend.domain.saved.data.entity.Saved;
 import com.koreanguide.koreanguidebackend.domain.saved.service.SavedService;
@@ -37,6 +38,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,6 +49,7 @@ public class SeoulServiceImpl implements SeoulService {
     private final SavedDao savedDao;
     private final SavedService savedService;
     private final SeoulRiverParkRepository seoulRiverParkRepository;
+    private final CacheService cacheService;
     private String SEOUL_API_KEY;
     private String SEOUL_SHOPPING_CENTER_LIST_API;
     private String SEOUL_ATTRACTIONS_LIST_API;
@@ -86,12 +89,13 @@ public class SeoulServiceImpl implements SeoulService {
 
     public SeoulServiceImpl(UserDao userDao, AssistantService assistantService, SavedDao savedDao,
                             SeoulRiverParkRepository seoulRiverParkRepository,
-                            SavedService savedService, @Value("${seoul.api.key}") String SEOUL_API_KEY) {
+                            SavedService savedService, CacheService cacheService, @Value("${seoul.api.key}") String SEOUL_API_KEY) {
         this.userDao = userDao;
         this.assistantService = assistantService;
         this.savedDao = savedDao;
         this.seoulRiverParkRepository = seoulRiverParkRepository;
         this.savedService = savedService;
+        this.cacheService = cacheService;
         this.SEOUL_API_KEY = SEOUL_API_KEY;
         this.SEOUL_ATTRACTIONS_LIST_API = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/SebcTourStreetKor/1/1000/";
         this.SEOUL_SHOPPING_CENTER_LIST_API = "http://openapi.seoul.go.kr:8088/" + this.SEOUL_API_KEY + "/json/SebcShoppingCenterKor/1/1000/";
@@ -509,6 +513,13 @@ public class SeoulServiceImpl implements SeoulService {
 
             String COUNTRY_CODE = CONVERT_COUNTRY_TO_CODE(seoulCountry);
 
+            // 미세먼지 정보 캐시 저장
+            String cacheKey = "DUST_DATA:" + COUNTRY_CODE;
+            Optional<DustData> dustData = cacheService.getDustData(cacheKey);
+            if (dustData.isPresent()) {
+                return dustData.get();
+            }
+
             JsonNode root = mapper.readTree(new URL(SEOUL_DUST_INFO_API + COUNTRY_CODE + "/"));
             JsonNode rows = root.path("ListAirQualityByDistrictService").path("row");
 
@@ -520,11 +531,14 @@ public class SeoulServiceImpl implements SeoulService {
                 PM_25_DATA = Integer.parseInt(row.get("PM25").asText());
             }
 
-            return DustData.builder()
+            DustData newDustData = DustData.builder()
                         .fineDust(CONVERT_FINE_DUST_DATA(PM_10_DATA))
                         .ultraFineDust(CONVERT_ULTRA_FINE_DUST_DATA(PM_25_DATA))
                     .build();
 
+            cacheService.saveDustData(cacheKey, newDustData);
+
+            return newDustData;
         } catch (IOException e) {
             return DustData.builder()
                         .fineDust(DustInfo.UNKNOWN)
@@ -563,6 +577,13 @@ public class SeoulServiceImpl implements SeoulService {
             base_time = "1700";
         } else {
             base_time = "2000";
+        }
+
+        // 날씨 정보 캐시 저장
+        String cacheKey = seoulCountry + ":" + base_date + base_time;
+        Optional<WeatherData> cachedData = cacheService.getWeatherData(cacheKey);
+        if (cachedData.isPresent()) {
+            return cachedData.get();
         }
 
         String urlBuilder = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst" + "?" + URLEncoder.encode("serviceKey", StandardCharsets.UTF_8) + "=z2I9YCbpCq1a5T%2BxmhqssSL3zWq2IVBTYusxgVlwvOR3kwy9vgokbtJ8xRuArqGZ27DClJUkfIGdP9KGZvH%2FFw%3D%3D" +
@@ -646,6 +667,8 @@ public class SeoulServiceImpl implements SeoulService {
         }
         rd.close();
         conn.disconnect();
+
+        cacheService.saveWeatherData(cacheKey, weatherData);
 
         return weatherData;
     }
