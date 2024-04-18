@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 @Builder
 public class WeatherResponseDto {
+    private String country;
     private String minTemp;
     private String maxTemp;
     private String nowTemp;

@@ -680,6 +680,7 @@ public class SeoulServiceImpl implements SeoulService {
         DustData dustData = CALL_DUST_DATA(user.getCountry());
 
         return ResponseEntity.status(HttpStatus.OK).body(WeatherResponseDto.builder()
+                        .country(getSeoulCountryName(user.getCountry()))
                         .minTemp(weatherData.getMinTemp())
                         .maxTemp(weatherData.getMaxTemp())
                         .nowTemp(weatherData.getNowTemp())
