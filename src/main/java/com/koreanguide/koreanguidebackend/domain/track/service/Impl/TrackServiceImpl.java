@@ -257,6 +257,7 @@ public class TrackServiceImpl implements TrackService {
                             .profileUrl(track.getUser().getProfileUrl())
                             .nickname(track.getUser().getNickname())
                             .view(track.getViewCount())
+                            .primaryUrl(track.getPrimaryImageUrl())
                             .like(trackDao.trackLikeCount(track))
                             .tags(TAGS_LIST)
                     .build());

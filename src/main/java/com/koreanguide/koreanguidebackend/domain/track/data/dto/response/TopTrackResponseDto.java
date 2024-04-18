@@ -17,6 +17,7 @@ public class TopTrackResponseDto {
     private String preview;
     private String profileUrl;
     private String nickname;
+    private String primaryUrl;
     private Long view;
     private Long like;
     private List<String> tags;
