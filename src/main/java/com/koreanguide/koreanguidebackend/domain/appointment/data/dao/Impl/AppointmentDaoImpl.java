@@ -4,6 +4,7 @@ import com.koreanguide.koreanguidebackend.domain.appointment.data.dao.Appointmen
 import com.koreanguide.koreanguidebackend.domain.appointment.data.entity.Appointment;
 import com.koreanguide.koreanguidebackend.domain.appointment.data.repository.AppointmentRepository;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
+import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,11 @@ public class AppointmentDaoImpl implements AppointmentDao {
     @Override
     public List<Appointment> getAppointmentListByUser(User user) {
         return appointmentRepository.getAppointmentByGuide(user);
+    }
+
+    @Override
+    public List<Appointment> getAppointmentListByTrack(Track track) {
+        return appointmentRepository.getAppointmentByTrack(track);
     }
 
     @Override

@@ -43,21 +43,31 @@ public class TrackDaoImpl implements TrackDao {
     public void deleteTrack(Long trackId, Long userId) {
         Track track = getTrackEntity(trackId);
 
-        if(track.getUser().getId().equals(userId)) {
+        if(!track.getUser().getId().equals(userId)) {
             throw new RuntimeException();
         }
 
+
+
         List<TrackLike> trackLikeList = trackLikeRepository.findAllByTrack(track);
-        trackLikeRepository.deleteAll(trackLikeList);
+        if(!trackLikeList.isEmpty()) {
+            trackLikeRepository.deleteAll(trackLikeList);
+        }
 
         List<TrackTag> trackTagList = trackTagRepository.findAllByTrack(track);
-        trackTagRepository.deleteAll(trackTagList);
+        if(!trackTagList.isEmpty()) {
+            trackTagRepository.deleteAll(trackTagList);
+        }
 
         List<TrackImage> trackImageList = trackImageRepository.findAllByTrack(track);
-        trackImageRepository.deleteAll(trackImageList);
+        if(!trackImageList.isEmpty()) {
+            trackImageRepository.deleteAll(trackImageList);
+        }
 
         List<Review> reviewList = reviewRepository.getAllByTrack(track);
-        reviewRepository.deleteAll(reviewList);
+        if(!reviewList.isEmpty()) {
+            reviewRepository.deleteAll(reviewList);
+        }
 
         trackRepository.delete(track);
     }

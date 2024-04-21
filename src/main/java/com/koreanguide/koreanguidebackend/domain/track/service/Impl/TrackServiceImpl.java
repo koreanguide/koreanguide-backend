@@ -1,5 +1,6 @@
 package com.koreanguide.koreanguidebackend.domain.track.service.Impl;
 
+import com.koreanguide.koreanguidebackend.domain.appointment.data.dao.AppointmentDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dao.UserDao;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.review.data.dao.ReviewDao;
@@ -11,6 +12,7 @@ import com.koreanguide.koreanguidebackend.domain.track.data.entity.Track;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackImage;
 import com.koreanguide.koreanguidebackend.domain.track.data.entity.TrackTag;
 import com.koreanguide.koreanguidebackend.domain.track.service.TrackService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,17 +25,12 @@ import java.util.List;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class TrackServiceImpl implements TrackService {
     private final TrackDao trackDao;
     private final ReviewDao reviewDao;
     private final UserDao userDao;
-
-    @Autowired
-    public TrackServiceImpl(ReviewDao reviewDao, UserDao userDao, TrackDao trackDao) {
-        this.reviewDao = reviewDao;
-        this.userDao = userDao;
-        this.trackDao = trackDao;
-    }
+    private final AppointmentDao appointmentDao;
 
     @Override
     public ResponseEntity<?> getAllTrack(Long userId) {
@@ -131,6 +128,12 @@ public class TrackServiceImpl implements TrackService {
 
         if(!userDao.checkPassword(user, trackRemoveRequestDto.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if(!appointmentDao.getAppointmentListByTrack(
+                trackDao.getTrackEntity(trackRemoveRequestDto.getTrackId())
+        ).isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 하나 이상의 약속에서 사용되고 있는 트랙입니다.");
         }
 
         trackDao.deleteTrack(trackRemoveRequestDto.getTrackId(), userId);
