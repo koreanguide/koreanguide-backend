@@ -1,6 +1,6 @@
 package com.koreanguide.koreanguidebackend.domain.file.service.Impl;
 
-import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.repository.UserRepository;
@@ -19,13 +19,13 @@ import java.util.UUID;
 
 @Service
 public class FileServiceImpl implements FileService {
-    private final AmazonS3 amazonS3;
+    private final AmazonS3Client amazonS3Client;
     private final UserRepository userRepository;
     private final FileLogRepository fileLogRepository;
 
     @Autowired
-    public FileServiceImpl(AmazonS3 amazonS3, UserRepository userRepository, FileLogRepository fileLogRepository) {
-        this.amazonS3 = amazonS3;
+    public FileServiceImpl(AmazonS3Client amazonS3Client, UserRepository userRepository, FileLogRepository fileLogRepository) {
+        this.amazonS3Client = amazonS3Client;
         this.userRepository = userRepository;
         this.fileLogRepository = fileLogRepository;
     }
@@ -43,16 +43,17 @@ public class FileServiceImpl implements FileService {
 
         // 파일 저장
         String originalFilename = multipartFile.getOriginalFilename();
-        String extension = originalFilename.substring(originalFilename.lastIndexOf(".")); // 확장자 추출
-        String uuidFilename = UUID.randomUUID().toString() + extension; // UUID 생성 및 확장자 붙이기
+        assert originalFilename != null;
+        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String uuidFilename = UUID.randomUUID() + extension;
 
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(multipartFile.getSize());
         metadata.setContentType(multipartFile.getContentType());
 
-        amazonS3.putObject(bucket, uuidFilename, multipartFile.getInputStream(), metadata);
+        amazonS3Client.putObject(bucket, uuidFilename, multipartFile.getInputStream(), metadata);
 
-        String FILE_URL = amazonS3.getUrl(bucket, uuidFilename).toString();
+        String FILE_URL = amazonS3Client.getUrl(bucket, uuidFilename).toString();
 
         // 로그 저장
         fileLogRepository.save(FileLog.builder()
