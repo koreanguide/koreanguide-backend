@@ -406,7 +406,7 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public ResponseEntity<?> resetPassword(ResetPasswordRequestDto resetPasswordRequestDto) {
-        if(matchEmailPattern(resetPasswordRequestDto.getEmail())) {
+        if(!matchEmailPattern(resetPasswordRequestDto.getEmail())) {
             throw new RuntimeException("이메일 형식 입력 오류");
         }
 
@@ -458,7 +458,7 @@ public class SignServiceImpl implements SignService {
 
     @Override
     public ResponseEntity<?> sendResetPasswordVerifyMail(String to) throws MessagingException {
-        if(matchEmailPattern(to)) {
+        if(!matchEmailPattern(to)) {
             throw new RuntimeException("이메일 형식 입력 오류");
         }
 

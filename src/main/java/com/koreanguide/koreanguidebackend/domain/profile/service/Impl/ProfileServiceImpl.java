@@ -345,12 +345,12 @@ public class ProfileServiceImpl implements ProfileService {
         User user = userDao.getUserEntity(userId);
         String newProfileUrl = changeProfileRequestDto.getTarget();
 
-        // 입력값 검증
-        if(!"DEFAULT".equals(newProfileUrl) &&
-                !newProfileUrl.matches("^https://koreanguide\\.s3\\.ap-northeast-2\\.amazonaws\\.com/.*$")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("프로필 URL이 올바르지 않습니다. " +
-                    "올바른 형식: https://koreanguide.s3.ap-northeast-2.amazonaws.com/<파일명>");
-        }
+//        // 입력값 검증
+//        if(!"DEFAULT".equals(newProfileUrl) &&
+//                !newProfileUrl.matches("^https://koreanguide\\.s3\\.ap-northeast-2\\.amazonaws\\.com/.*$")) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("프로필 URL이 올바르지 않습니다. " +
+//                    "올바른 형식: https://koreanguide.s3.ap-northeast-2.amazonaws.com/<파일명>");
+//        }
 
         user.setProfileUrl(newProfileUrl);
         userDao.saveUserEntity(user);
