@@ -211,6 +211,7 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     public ResponseEntity<?> getTrackInfo(Long userId, Long trackId) {
+        User user = userDao.getUserEntity(userId);
         Track track = trackDao.getTrackEntity(trackId);
         List<TrackTag> trackTagList = trackDao.getTrackTagEntityViaEntity(track);
         List<TrackImage> trackImageList = trackDao.getTrackImageEntityViaEntity(track);
@@ -220,6 +221,7 @@ public class TrackServiceImpl implements TrackService {
         trackResponseDto.setTitle(track.getTrackTitle());
         trackResponseDto.setPreview(track.getTrackPreview());
         trackResponseDto.setPrimaryImage(track.getPrimaryImageUrl());
+        trackResponseDto.setOwn(track.getUser().equals(user));
 
         List<String> TAGS_LIST = new ArrayList<>();
         for(TrackTag trackTag : trackTagList) {

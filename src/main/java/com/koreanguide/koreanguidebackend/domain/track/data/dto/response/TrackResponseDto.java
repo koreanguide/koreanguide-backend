@@ -21,4 +21,5 @@ public class TrackResponseDto {
     private String content;
     private Long like;
     private Long view;
+    private boolean own;
 }
