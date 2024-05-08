@@ -12,21 +12,14 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class S3Config {
-    private final String accessKey;
-    private final String secretKey;
-    private final String region;
-    private final String endPoint;
+    @Value("${cloud.aws.credentials.access-key}")
+    private String accessKey;
 
-    @Autowired
-    public S3Config(@Value("${cloud.aws.credentials.access-key}") String accessKey,
-                    @Value("${cloud.aws.credentials.secret-key}") String secretKey,
-                    @Value("${cloud.aws.region.static}") String region,
-                    @Value("${cloud.aws.s3.endpoint}") String endPoint) {
-        this.accessKey = accessKey;
-        this.secretKey = secretKey;
-        this.region = region;
-        this.endPoint = endPoint;
-    }
+    @Value("${cloud.aws.credentials.secret-key}")
+    private String secretKey;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     @Bean
     public AmazonS3Client amazonS3Client() {
@@ -34,8 +27,8 @@ public class S3Config {
 
         return (AmazonS3Client) AmazonS3ClientBuilder
                 .standard()
+                .withRegion(region)
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endPoint, region))
                 .build();
     }
 }
