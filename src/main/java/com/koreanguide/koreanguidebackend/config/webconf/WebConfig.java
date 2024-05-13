@@ -6,8 +6,11 @@ import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.LocaleResolver;
+import org.springframework.web.servlet.i18n.FixedLocaleResolver;
 
 import java.util.List;
+import java.util.Locale;
 
 
 @Configuration
@@ -15,6 +18,13 @@ public class WebConfig implements WebMvcConfigurer {
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
+    }
+
+    @Bean
+    public LocaleResolver localeResolver() {
+        FixedLocaleResolver localeResolver = new FixedLocaleResolver();
+        localeResolver.setDefaultLocale(new Locale("ko", "KR"));
+        return localeResolver;
     }
 
     @Override

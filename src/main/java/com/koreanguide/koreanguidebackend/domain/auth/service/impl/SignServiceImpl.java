@@ -10,11 +10,13 @@ import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.SignInRe
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.request.SignInRequestDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.dto.response.TokenResponseDto;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.KakaoUser;
+import com.koreanguide.koreanguidebackend.domain.auth.data.entity.SignLog;
 import com.koreanguide.koreanguidebackend.domain.auth.data.entity.User;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.KoreaState;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SeoulCountry;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.SignType;
 import com.koreanguide.koreanguidebackend.domain.auth.data.enums.UserRole;
+import com.koreanguide.koreanguidebackend.domain.auth.data.repository.SignLogRepository;
 import com.koreanguide.koreanguidebackend.domain.auth.exception.UserNotFoundException;
 import com.koreanguide.koreanguidebackend.domain.auth.service.SignService;
 import com.koreanguide.koreanguidebackend.domain.credit.data.dao.CreditDao;
@@ -63,6 +65,7 @@ public class SignServiceImpl implements SignService {
     private final UserDetailsService userDetailsService;
     private final MailService mailService;
     private final RedisTemplate<String, String> redisTemplate;
+    private final SignLogRepository signLogRepository;
 
     @Value("${KAKAO.CLIENT.ID}")
     private String KAKAO_CLIENT_ID;
@@ -391,6 +394,11 @@ public class SignServiceImpl implements SignService {
 
             String key = "REFRESH_TOKEN:" + user.getEmail();
             redisTemplate.opsForValue().set(key, GENERATED_REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
+
+            signLogRepository.save(SignLog.builder()
+                            .user(user)
+                            .dt(LocalDateTime.now())
+                    .build());
 
             return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
                     .isGuide(user.getUserRole().equals(UserRole.GUIDE))
