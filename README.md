@@ -23,7 +23,31 @@
 ![tech](https://github.com/koreanguide/assets/blob/main/tech_stacks.jpg?raw=true)
 
 ## 5️⃣ Package Architecture
-00000
+```
+├── src.main.java.com.koreanguide.koreanguidebackend
+│   ├── config
+│   │   └── rabbitmq
+│   │   └── redis
+│   │   └── s3
+│   │   └── security
+│   │   └── swagger
+│   │   └── webconf
+│   │   └── websocket
+│   ├── domain
+│   │   └── appointment
+│   │   └── assistant
+│   │   └── auth
+│   │   └── cache
+│   │   └── chat
+│   │   └── credit
+│   │   └── file
+│   │   └── mail
+│   │   └── profile
+│   │   └── review
+│   │   └── saved
+│   │   └── seoul
+│   │   └── track
+```
 
 ## 6️⃣ CI/CD
 - Docker & Docker Hub
