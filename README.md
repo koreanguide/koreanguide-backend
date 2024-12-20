@@ -18,3 +18,13 @@
 
 ## 3️⃣ Information Architecture
 ![info](https://github.com/koreanguide/assets/blob/main/information_architecture.jpg?raw=true)
+
+## 4️⃣ Tech Stacks
+![tech](https://github.com/koreanguide/assets/blob/main/tech_stacks.jpg?raw=true)
+
+## 5️⃣ Package Architecture
+00000
+
+## 6️⃣ CI/CD
+- Docker & Docker Hub
+- GitHub Actions
