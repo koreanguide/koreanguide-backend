@@ -1,1 +1,5 @@
 rootProject.name = 'koreanguide'
+include 'koreanguide-api'
+include 'koreanguide-common'
+include 'koreanguide-domain'
+
