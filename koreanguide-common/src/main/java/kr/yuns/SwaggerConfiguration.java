@@ -1,7 +1,5 @@
 package kr.yuns;
 
-import org.springdoc.core.models.GroupedOpenApi;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
@@ -15,13 +13,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Configuration
 public class SwaggerConfiguration {
-    @Bean
-    public GroupedOpenApi chatOpenApi() {
-        String[] paths = {"/v1/**"};
+    // @Bean
+    // public GroupedOpenApi chatOpenApi() {
+    //     // String[] paths = {"/v1/**"};
 
-        return GroupedOpenApi.builder()
-                .group("KOREAN GUIDE API (v1)")
-                .pathsToMatch(paths)
-                .build();
-    }
+    //     return GroupedOpenApi.builder()
+    //             .group("KOREAN GUIDE API (v1)")
+    //             // .pathsToMatch(paths)
+    //             .build();
+    // }
 }
