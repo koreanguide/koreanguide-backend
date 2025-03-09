@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://[IP ADDRESS]:3306/[DATABASE]
+    username: [USERNAME]
+    password: [PASSWORD]
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+springdoc:
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  swagger-ui:
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+jwt:
+  secret: [SECRET KEY]
