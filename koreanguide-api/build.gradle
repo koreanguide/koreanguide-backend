@@ -1,20 +1,12 @@
-plugins {
-    id 'java'
+bootJar {
+    enabled = true
 }
 
-group = 'kr.yuns'
-version = '0.0.1-SNAPSHOT'
-
-repositories {
-    mavenCentral()
+jar {
+    enabled = false
 }
 
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation project(':koreanguide-common')
-}
-
-test {
-    useJUnitPlatform()
+    implementation project(':koreanguide-domain')
 }

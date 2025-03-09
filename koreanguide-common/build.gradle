@@ -1,7 +1,7 @@
-bootJar.enabled = false
+bootJar {
+    enabled = true
+}
 
-jar.enabled = true
-
-dependencies {
-    // 필요한 의존성 추가
+jar {
+    enabled = false
 }
