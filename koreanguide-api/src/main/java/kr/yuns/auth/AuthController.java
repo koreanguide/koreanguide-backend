@@ -16,7 +16,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
     private final AuthService authService;
 
@@ -60,7 +60,7 @@ public class AuthController {
     //             validateRequestDto.getKey());
     // }
 
-    @PostMapping(value = "/v1/signup")
+    @PostMapping(value = "/signup")
     public ResponseEntity<?> signUp(@RequestBody SignUpRequestDto signUpRequestDto) {
         return authService.signUp(signUpRequestDto);
     }
@@ -70,22 +70,22 @@ public class AuthController {
     //     return authService.socialKakaoLogin(code);
     // }
 
-    @PostMapping(value = "/v1/signin")
+    @PostMapping(value = "/signin")
     public ResponseEntity<?> signIn(@RequestBody SignInRequestDto signInRequestDto) throws RuntimeException {
         return authService.signIn(signInRequestDto);
     }
 
-    @PostMapping(value = "/v1/refresh")
+    @PostMapping(value = "/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody TokenRequestDto tokenRequestDto){
         return authService.refreshToken(tokenRequestDto);
     }
 
-    @PostMapping(value = "/v1/token")
+    @PostMapping(value = "/token")
     public ResponseEntity<?> validateToken(@RequestBody TokenRequestDto tokenRequestDto) {
         return authService.validateToken(tokenRequestDto);
     }
 
-    @GetMapping(value = "/v1/exception")
+    @GetMapping(value = "/exception")
     public void exceptionTest() throws RuntimeException{
         throw new RuntimeException("접근이 금지되었습니다.");
     }
