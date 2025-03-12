@@ -1,25 +1,36 @@
 package kr.yuns;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
-import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 
 @OpenAPIDefinition(
         info = @Info(title = "KOREAN GUIDE API Spec",
                 description = "KOREAN GUIDE API Spec",
-                version = "v1"))
-@RequiredArgsConstructor
+                version = "v2"))
 @Configuration
 public class SwaggerConfiguration {
-    // @Bean
-    // public GroupedOpenApi chatOpenApi() {
-    //     // String[] paths = {"/v1/**"};
+    private static final String BEARER_TOKEN_PREFIX = "Bearer";
 
-    //     return GroupedOpenApi.builder()
-    //             .group("KOREAN GUIDE API (v1)")
-    //             // .pathsToMatch(paths)
-    //             .build();
-    // }
+    @Bean
+    public OpenAPI openAPI() {
+        String securityJwtName = "JWT";
+        SecurityRequirement securityRequirement = new SecurityRequirement().addList(securityJwtName);
+        Components components = new Components()
+                .addSecuritySchemes(securityJwtName, new SecurityScheme()
+                        .name(securityJwtName)
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme(BEARER_TOKEN_PREFIX)
+                        .bearerFormat(securityJwtName));
+
+        return new OpenAPI()
+                .addSecurityItem(securityRequirement)
+                .components(components);
+    }
 }

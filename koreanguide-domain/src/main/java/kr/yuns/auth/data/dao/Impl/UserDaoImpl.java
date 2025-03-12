@@ -32,6 +32,17 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
+    public Long getUserId(String email) throws UserNotFoundException {
+        Optional<User> user = userRepository.findByEmail(email);
+        
+        if(user.isEmpty()) {
+            throw new UserNotFoundException();
+        }
+
+        return user.get().getId();
+    }
+
+    @Override
     public User getUserEntityByEmail(String email) throws UserNotFoundException {
         Optional<User> user = userRepository.findByEmail(email);
 

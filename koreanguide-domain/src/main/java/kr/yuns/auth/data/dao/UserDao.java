@@ -6,6 +6,7 @@ import kr.yuns.auth.exception.UserNotFoundException;
 public interface UserDao {
     User getUserEntity(Long userId) throws UserNotFoundException;
     User getUserEntityByEmail(String email) throws UserNotFoundException;
+    Long getUserId(String email) throws UserNotFoundException;
     boolean checkAlreadyExistUserByEmail(String email);
     boolean checkAlreadyExistUserByNickname(String nickname);
     void saveUserEntity(User user);
