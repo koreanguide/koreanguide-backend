@@ -89,6 +89,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ResponseEntity<?> getUserProfile(Long userId) {
+        log.info("%d", userId);
         ProfileResponseDto profileResponseDto = new ProfileResponseDto();
         User user = userDao.getUserEntity(userId);
         Profile profile = profileDao.getUserProfile(user);

@@ -1,7 +1,10 @@
 package kr.yuns;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,10 +15,14 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.crypto.SecretKey;
 
 @Component
 @Slf4j
@@ -32,6 +39,10 @@ public class JwtTokenProvider {
     //    Refresh Token: 2주 유효
     private final long refreshTokenValidMillisecond = 1000L * 60 * 60 * 24 * 14;
 
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    }
+
     public String createAccessToken(String email, List<String> roles) {
         return createToken(email, roles, accessTokenValidMillisecond);
     }
@@ -40,27 +51,50 @@ public class JwtTokenProvider {
         return createToken(email, new ArrayList<>(), refreshTokenValidMillisecond);
     }
 
-    private String createToken(String email, List<String> roles, long validMillisecond) {
-        Date now = new Date();
+    // private String createToken(String email, List<String> roles, long validMillisecond) {
+    //     Date now = new Date();
 
+    //     return Jwts.builder()
+    //         .signWith(Jwts.SIG.HS512.key().build())
+    //         .claims().subject(email).add("roles", roles).and()
+    //         .issuedAt(now)
+    //         .expiration(new Date(now.getTime() + validMillisecond))
+    //         .compact();
+    // }
+
+    @SuppressWarnings("deprecation")
+    public String createToken(String email, List<String> roles, long validMillisecond) {
+        Date now = new Date();
+    
         return Jwts.builder()
-                    .signWith(Jwts.SIG.HS512.key().build())
-                    .claims().subject(email).add("roles", roles).and()
-                    .issuedAt(now)
-                    .expiration(new Date(now.getTime() + validMillisecond))
-                    .compact();
+                .signWith(SignatureAlgorithm.HS512, secretKey.getBytes())  // 서명 알고리즘 및 키 지정
+                .claim("roles", roles)
+                .setSubject(email)
+                .setIssuedAt(now)
+                .setExpiration(new Date(now.getTime() + validMillisecond))
+                .compact(); // JWT 토큰 생성
     }
 
     public Authentication getAuthentication(String token) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(this.getUserEmail(token));
+        UserDetails userDetails = userDetailsService.loadUserByUsername(this.getUserEmailByToken(token));
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
-    public String getUserEmail(String token) {
+    public String getUserEmailByToken(String token) {
         Claims claims = Jwts.parser()
-                .verifyWith(Jwts.SIG.HS512.key().build())
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
+                .getPayload();
+    
+        return claims.getSubject();
+    }
+
+    public String getUserEmail(HttpServletRequest request) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(resolveToken(request))
                 .getPayload();
     
         return claims.getSubject();
@@ -79,16 +113,24 @@ public class JwtTokenProvider {
         }
     }
 
-    //    HTTP Header에서 Token 추출
     public String resolveToken(HttpServletRequest request) {
-        return request.getHeader("X-AUTH-TOKEN");
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
+    }
+    
+
+    public String convertToken(String token) {
+        return token.substring(7);
     }
 
     //    Token 유효성 검사
     public boolean validateToken(String token) {
         try {
             Claims claims = Jwts.parser()
-                .verifyWith(Jwts.SIG.HS512.key().build())
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

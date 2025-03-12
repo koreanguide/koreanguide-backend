@@ -470,7 +470,7 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("유효하지 않은 Refresh Token");
         }
 
-        String USER_EMAIL = jwtTokenProvider.getUserEmail(tokenRequestDto.getRefreshToken());
+        String USER_EMAIL = jwtTokenProvider.getUserEmailByToken(tokenRequestDto.getRefreshToken());
 
         // if(!tokenRequestDto.getRefreshToken().equals(redisTemplate.opsForValue().get("REFRESH_TOKEN:" + USER_EMAIL))) {
         //     throw new RuntimeException("유효하지 않은 Refresh Token");

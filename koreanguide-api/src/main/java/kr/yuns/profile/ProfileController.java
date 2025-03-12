@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
+import kr.yuns.JwtTokenProvider;
 import kr.yuns.auth.data.dao.UserDao;
 import kr.yuns.profile.data.dto.request.ChangeAddressRequestDto;
 import kr.yuns.profile.data.dto.request.ChangeBrithReqeustDto;
@@ -24,10 +25,11 @@ import lombok.AllArgsConstructor;
 @RequestMapping("/api/v1/profile")
 public class ProfileController {
     private final ProfileService profileService;
+    private final JwtTokenProvider tokenProvider;
     private final UserDao userDao;
 
     public Long GET_USER_ID_BY_TOKEN(HttpServletRequest request) {
-        return userDao.getUserId(request.getHeader("X-AUTH-TOKEN"));
+        return userDao.getUserId(tokenProvider.getUserEmail(request));
     }
 
     @PostMapping("/name")
