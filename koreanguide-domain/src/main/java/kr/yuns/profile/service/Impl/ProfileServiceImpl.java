@@ -13,6 +13,13 @@ import org.springframework.stereotype.Service;
 
 import kr.yuns.auth.data.dao.UserDao;
 import kr.yuns.auth.data.entity.User;
+import kr.yuns.credit.data.dao.CreditDao;
+import kr.yuns.credit.data.entity.BankAccounts;
+import kr.yuns.credit.data.entity.Credit;
+import kr.yuns.credit.data.enums.AccountProvider;
+import kr.yuns.credit.data.enums.TransactionContent;
+import kr.yuns.credit.data.exception.BankAccountsNotFoundException;
+import kr.yuns.credit.service.CreditService;
 import kr.yuns.profile.data.dao.ProfileDao;
 import kr.yuns.profile.data.dto.request.ChangeAddressRequestDto;
 import kr.yuns.profile.data.dto.request.ChangeBrithReqeustDto;
@@ -20,7 +27,10 @@ import kr.yuns.profile.data.dto.request.ChangeNearSubwayRequestDto;
 import kr.yuns.profile.data.dto.request.ChangePasswordRequestDto;
 import kr.yuns.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
 import kr.yuns.profile.data.dto.request.ChangeProfileRequestDto;
+import kr.yuns.profile.data.dto.response.InfoBoxResponseDto;
+import kr.yuns.profile.data.dto.response.MainProfileAlertResponseDto;
 import kr.yuns.profile.data.dto.response.MyPageInfoResponseDto;
+import kr.yuns.profile.data.dto.response.MyPageResponseDto;
 import kr.yuns.profile.data.dto.response.ProfileResponseDto;
 import kr.yuns.profile.data.entity.Profile;
 import kr.yuns.profile.data.enums.Language;
@@ -36,8 +46,8 @@ public class ProfileServiceImpl implements ProfileService {
     private final UserDao userDao;
     // private final TrackDao trackDao;
     private final ProfileDao profileDao;
-    // private final CreditDao creditDao;
-    // private final CreditService creditService;
+    private final CreditDao creditDao;
+    private final CreditService creditService;
 
     public String TRANSLATE_LINE_TO_KO(SubwayLine subwayLine) {
         String SUBWAY_LINE_KO;
@@ -132,163 +142,163 @@ public class ProfileServiceImpl implements ProfileService {
         return ResponseEntity.status(HttpStatus.OK).body(profileResponseDto);
     }
 
-    // @Override
-    // public ResponseEntity<MainProfileAlertResponseDto> getMainPageProfileAlert(Long userId) {
-    //     MainProfileAlertResponseDto mainProfileAlertResponseDto = new MainProfileAlertResponseDto();
+    @Override
+    public ResponseEntity<MainProfileAlertResponseDto> getMainPageProfileAlert(Long userId) {
+        MainProfileAlertResponseDto mainProfileAlertResponseDto = new MainProfileAlertResponseDto();
 
-    //     User user = userDao.getUserEntity(userId);
-    //     Profile profile = profileDao.getUserProfile(user);
-    //     List<Track> track = trackDao.getUserAllTrack(user);
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
+        // List<Track> track = trackDao.getUserAllTrack(user);
 
-    //     int currentLevel = 1;
+        int currentLevel = 1;
 
-    //     // 1단계 여부
-    //     mainProfileAlertResponseDto.setFirstLevel(true);
+        // 1단계 여부
+        mainProfileAlertResponseDto.setFirstLevel(true);
 
-    //     // 2단계 여부
-    //     if(profile.getIntroduce() == null) {
-    //         mainProfileAlertResponseDto.setSecondLevel(false);
-    //     } else {
-    //         mainProfileAlertResponseDto.setSecondLevel(true);
-    //         currentLevel++;
-    //     }
+        // 2단계 여부
+        if(profile.getIntroduce() == null) {
+            mainProfileAlertResponseDto.setSecondLevel(false);
+        } else {
+            mainProfileAlertResponseDto.setSecondLevel(true);
+            currentLevel++;
+        }
 
-    //     // 3단계 여부
-    //     if(profile.getSubwayLine() == null || profile.getSubwayStation() == null) {
-    //         mainProfileAlertResponseDto.setThirdLevel(false);
-    //     } else {
-    //         mainProfileAlertResponseDto.setThirdLevel(true);
-    //         currentLevel++;
-    //     }
+        // 3단계 여부
+        if(profile.getSubwayLine() == null || profile.getSubwayStation() == null) {
+            mainProfileAlertResponseDto.setThirdLevel(false);
+        } else {
+            mainProfileAlertResponseDto.setThirdLevel(true);
+            currentLevel++;
+        }
 
-    //     // 4단계 여부
-    //     if(profile.getBirth() == null) {
-    //         mainProfileAlertResponseDto.setFourthLevel(false);
-    //     } else {
-    //         mainProfileAlertResponseDto.setFourthLevel(true);
-    //         currentLevel++;
-    //     }
+        // 4단계 여부
+        if(profile.getBirth() == null) {
+            mainProfileAlertResponseDto.setFourthLevel(false);
+        } else {
+            mainProfileAlertResponseDto.setFourthLevel(true);
+            currentLevel++;
+        }
 
-    //     // 5단계 여부
-    //     if(track.isEmpty()) {
-    //         mainProfileAlertResponseDto.setFifthLevel(false);
-    //     } else {
-    //         mainProfileAlertResponseDto.setFifthLevel(true);;
-    //         currentLevel++;
-    //     }
+        // // 5단계 여부
+        // if(track.isEmpty()) {
+        //     mainProfileAlertResponseDto.setFifthLevel(false);
+        // } else {
+        //     mainProfileAlertResponseDto.setFifthLevel(true);;
+        //     currentLevel++;
+        // }
 
-    //     // 단계 표시
-    //     mainProfileAlertResponseDto.setLevel(currentLevel);
+        // 단계 표시
+        mainProfileAlertResponseDto.setLevel(currentLevel);
 
-    //     // 완료 여부
-    //     if(currentLevel == 5) {
-    //         mainProfileAlertResponseDto.setProfileComplete(true);
-    //     }
+        // 완료 여부
+        if(currentLevel == 5) {
+            mainProfileAlertResponseDto.setProfileComplete(true);
+        }
 
-    //     // 쿠폰 사용 여부
-    //     mainProfileAlertResponseDto.setCouponUsed(profile.isProfileCompleteCouponUsed());
+        // 쿠폰 사용 여부
+        mainProfileAlertResponseDto.setCouponUsed(profile.isProfileCompleteCouponUsed());
 
-    //     return ResponseEntity.status(HttpStatus.OK).body(mainProfileAlertResponseDto);
-    // }
+        return ResponseEntity.status(HttpStatus.OK).body(mainProfileAlertResponseDto);
+    }
 
-    // @Override
-    // public ResponseEntity<?> depositMainPageProfileCompleteCredit(Long userId) {
-    //     MainProfileAlertResponseDto mainProfileAlertResponseDto = getMainPageProfileAlert(userId).getBody();
-    //     assert mainProfileAlertResponseDto != null;
-    //     if(mainProfileAlertResponseDto.isProfileComplete() && !mainProfileAlertResponseDto.isCouponUsed()) {
-    //         creditService.depositCreditToUser(userId, 10000L, TransactionContent.PROFILE_COMPLETE);
-    //         User user = userDao.getUserEntity(userId);
-    //         Profile profile = profileDao.getUserProfile(user);
-    //         profile.setProfileCompleteCouponUsed(true);
-    //         profileDao.saveProfileEntity(profile);
-    //         return ResponseEntity.status(HttpStatus.OK).build();
-    //     } else {
-    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-    //     }
-    // }
+    @Override
+    public ResponseEntity<?> depositMainPageProfileCompleteCredit(Long userId) {
+        MainProfileAlertResponseDto mainProfileAlertResponseDto = getMainPageProfileAlert(userId).getBody();
+        assert mainProfileAlertResponseDto != null;
+        if(mainProfileAlertResponseDto.isProfileComplete() && !mainProfileAlertResponseDto.isCouponUsed()) {
+            creditService.depositCreditToUser(userId, 10000L, TransactionContent.PROFILE_COMPLETE);
+            User user = userDao.getUserEntity(userId);
+            Profile profile = profileDao.getUserProfile(user);
+            profile.setProfileCompleteCouponUsed(true);
+            profileDao.saveProfileEntity(profile);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
 
-//     @Override
-//     public ResponseEntity<?> getUserInfo(Long userId) {
-//         MyPageResponseDto myPageResponseDto = new MyPageResponseDto();
+    @Override
+    public ResponseEntity<?> getUserInfo(Long userId) {
+        MyPageResponseDto myPageResponseDto = new MyPageResponseDto();
 
-// //        사용자 정보 확인
-//         User user = userDao.getUserEntity(userId);
-//         Profile profile = profileDao.getUserProfile(user);
+//        사용자 정보 확인
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
 
-//         myPageResponseDto.setNickName(user.getNickname());
-//         myPageResponseDto.setEmail(user.getEmail());
-//         myPageResponseDto.setEnable(user.isEnabled());
-//         myPageResponseDto.setPassword("********");
-//         myPageResponseDto.setBlocked("미등록");
-//         myPageResponseDto.setProfileUrl(profile.getUser().getProfileUrl());
-//         myPageResponseDto.setName(profile.getName() == null ? "미등록" : profile.getName());
-//         myPageResponseDto.setPhoneNum(profile.getPhoneNum() == null ? "미등록" : profile.getPhoneNum());
-//         myPageResponseDto.setIntroduce(profile.getIntroduce() == null ? "등록된 소개 글이 없습니다." : profile.getIntroduce());
+        myPageResponseDto.setNickName(user.getNickname());
+        myPageResponseDto.setEmail(user.getEmail());
+        myPageResponseDto.setEnable(user.isEnabled());
+        myPageResponseDto.setPassword("********");
+        myPageResponseDto.setBlocked("미등록");
+        myPageResponseDto.setProfileUrl(profile.getUser().getProfileUrl());
+        myPageResponseDto.setName(profile.getName() == null ? "미등록" : profile.getName());
+        myPageResponseDto.setPhoneNum(profile.getPhoneNum() == null ? "미등록" : profile.getPhoneNum());
+        myPageResponseDto.setIntroduce(profile.getIntroduce() == null ? "등록된 소개 글이 없습니다." : profile.getIntroduce());
 
-//         try {
-//             BankAccounts bankAccounts = creditDao.getBankAccountsEntityViaUser(user);
-//             AccountProvider accountProvider = bankAccounts.getAccountProvider();
-//             String ACCOUNT_PROVIDER_KO_NAME = "";
+        try {
+            BankAccounts bankAccounts = creditDao.getBankAccountsEntityViaUser(user);
+            AccountProvider accountProvider = bankAccounts.getAccountProvider();
+            String ACCOUNT_PROVIDER_KO_NAME = "";
 
-//             if(accountProvider.equals(AccountProvider.KYONGNAMBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "경남";
-//             } else if (accountProvider.equals(AccountProvider.GWANGJUBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "광주";
-//             } else if (accountProvider.equals(AccountProvider.LOCALNONGHYEOP)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "축농협";
-//             } else if (accountProvider.equals(AccountProvider.BUSANBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "부산";
-//             } else if (accountProvider.equals(AccountProvider.SAEMAUL)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "새마을";
-//             } else if (accountProvider.equals(AccountProvider.SANLIM)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "산림";
-//             } else if (accountProvider.equals(AccountProvider.SHINHYEOP)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "신협";
-//             } else if (accountProvider.equals(AccountProvider.CITI)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "시티";
-//             } else if (accountProvider.equals(AccountProvider.WOORI)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "우리";
-//             } else if (accountProvider.equals(AccountProvider.POST)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "우체국";
-//             } else if (accountProvider.equals(AccountProvider.SAVINGBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "저축";
-//             } else if (accountProvider.equals(AccountProvider.JEONBUKBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "전북";
-//             } else if (accountProvider.equals(AccountProvider.JEJUBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "제주";
-//             } else if (accountProvider.equals(AccountProvider.KAKAOBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "카카오";
-//             } else if (accountProvider.equals(AccountProvider.TOSSBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "토스";
-//             } else if (accountProvider.equals(AccountProvider.HANA)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "하나";
-//             } else if (accountProvider.equals(AccountProvider.HSBC)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "홍콩상하이";
-//             } else if (accountProvider.equals(AccountProvider.IBK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "IBK";
-//             } else if (accountProvider.equals(AccountProvider.KOOKMIN)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "국민";
-//             } else if (accountProvider.equals(AccountProvider.DAEGUBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "대구";
-//             } else if (accountProvider.equals(AccountProvider.KDBBANK)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "산업";
-//             } else if (accountProvider.equals(AccountProvider.NONGHYEOP)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "농협";
-//             } else if (accountProvider.equals(AccountProvider.SC)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "SC";
-//             } else if (accountProvider.equals(AccountProvider.SUHYEOP)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "수협";
-//             } else if (accountProvider.equals(AccountProvider.SHINHAN)) {
-//                 ACCOUNT_PROVIDER_KO_NAME = "신한";
-//             }
+            if(accountProvider.equals(AccountProvider.KYONGNAMBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "경남";
+            } else if (accountProvider.equals(AccountProvider.GWANGJUBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "광주";
+            } else if (accountProvider.equals(AccountProvider.LOCALNONGHYEOP)) {
+                ACCOUNT_PROVIDER_KO_NAME = "축농협";
+            } else if (accountProvider.equals(AccountProvider.BUSANBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "부산";
+            } else if (accountProvider.equals(AccountProvider.SAEMAUL)) {
+                ACCOUNT_PROVIDER_KO_NAME = "새마을";
+            } else if (accountProvider.equals(AccountProvider.SANLIM)) {
+                ACCOUNT_PROVIDER_KO_NAME = "산림";
+            } else if (accountProvider.equals(AccountProvider.SHINHYEOP)) {
+                ACCOUNT_PROVIDER_KO_NAME = "신협";
+            } else if (accountProvider.equals(AccountProvider.CITI)) {
+                ACCOUNT_PROVIDER_KO_NAME = "시티";
+            } else if (accountProvider.equals(AccountProvider.WOORI)) {
+                ACCOUNT_PROVIDER_KO_NAME = "우리";
+            } else if (accountProvider.equals(AccountProvider.POST)) {
+                ACCOUNT_PROVIDER_KO_NAME = "우체국";
+            } else if (accountProvider.equals(AccountProvider.SAVINGBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "저축";
+            } else if (accountProvider.equals(AccountProvider.JEONBUKBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "전북";
+            } else if (accountProvider.equals(AccountProvider.JEJUBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "제주";
+            } else if (accountProvider.equals(AccountProvider.KAKAOBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "카카오";
+            } else if (accountProvider.equals(AccountProvider.TOSSBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "토스";
+            } else if (accountProvider.equals(AccountProvider.HANA)) {
+                ACCOUNT_PROVIDER_KO_NAME = "하나";
+            } else if (accountProvider.equals(AccountProvider.HSBC)) {
+                ACCOUNT_PROVIDER_KO_NAME = "홍콩상하이";
+            } else if (accountProvider.equals(AccountProvider.IBK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "IBK";
+            } else if (accountProvider.equals(AccountProvider.KOOKMIN)) {
+                ACCOUNT_PROVIDER_KO_NAME = "국민";
+            } else if (accountProvider.equals(AccountProvider.DAEGUBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "대구";
+            } else if (accountProvider.equals(AccountProvider.KDBBANK)) {
+                ACCOUNT_PROVIDER_KO_NAME = "산업";
+            } else if (accountProvider.equals(AccountProvider.NONGHYEOP)) {
+                ACCOUNT_PROVIDER_KO_NAME = "농협";
+            } else if (accountProvider.equals(AccountProvider.SC)) {
+                ACCOUNT_PROVIDER_KO_NAME = "SC";
+            } else if (accountProvider.equals(AccountProvider.SUHYEOP)) {
+                ACCOUNT_PROVIDER_KO_NAME = "수협";
+            } else if (accountProvider.equals(AccountProvider.SHINHAN)) {
+                ACCOUNT_PROVIDER_KO_NAME = "신한";
+            }
 
-//             myPageResponseDto.setAccountInfo(ACCOUNT_PROVIDER_KO_NAME + " " + bankAccounts.getAccountNumber());
-//         } catch (BankAccountsNotFoundException e) {
-//             myPageResponseDto.setAccountInfo("미등록");
-//         }
+            myPageResponseDto.setAccountInfo(ACCOUNT_PROVIDER_KO_NAME + " " + bankAccounts.getAccountNumber());
+        } catch (BankAccountsNotFoundException e) {
+            myPageResponseDto.setAccountInfo("미등록");
+        }
 
-//         return ResponseEntity.status(HttpStatus.OK).body(myPageResponseDto);
-//     }
+        return ResponseEntity.status(HttpStatus.OK).body(myPageResponseDto);
+    }
 
     @Override
     public ResponseEntity<?> changeName(Long userId, ChangeProfileRequestDto changeProfileRequestDto) {
@@ -492,17 +502,17 @@ public class ProfileServiceImpl implements ProfileService {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    // @Override
-    // public ResponseEntity<?> getInfoBoxInfo(Long userId) {
-    //     User user = userDao.getUserEntity(userId);
-    //     Profile profile = profileDao.getUserProfile(user);
-    //     Credit credit = creditDao.getUserCreditEntity(user);
+    @Override
+    public ResponseEntity<?> getInfoBoxInfo(Long userId) {
+        User user = userDao.getUserEntity(userId);
+        Profile profile = profileDao.getUserProfile(user);
+        Credit credit = creditDao.getUserCreditEntity(user);
 
-    //     return ResponseEntity.status(HttpStatus.OK).body(InfoBoxResponseDto.builder()
-    //                     .name(profile.getUser().getNickname())
-    //                     .profileUrl(profile.getUser().getProfileUrl())
-    //                     .email(profile.getUser().getEmail())
-    //                     .credit(credit.getAmount())
-    //             .build());
-    // }
+        return ResponseEntity.status(HttpStatus.OK).body(InfoBoxResponseDto.builder()
+                        .name(profile.getUser().getNickname())
+                        .profileUrl(profile.getUser().getProfileUrl())
+                        .email(profile.getUser().getEmail())
+                        .credit(credit.getAmount())
+                .build());
+    }
 }
