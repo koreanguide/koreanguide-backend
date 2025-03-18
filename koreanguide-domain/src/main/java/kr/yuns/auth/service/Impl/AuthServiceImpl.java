@@ -2,7 +2,8 @@ package kr.yuns.auth.service.Impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-// import org.springframework.data.redis.core.RedisTemplate;
+
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
@@ -34,6 +35,7 @@ import kr.yuns.profile.data.enums.Language;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -47,7 +49,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserDetailsService userDetailsService;
     // private final MailService mailService;
-    // private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
 
     // @Value("${KAKAO.CLIENT.ID}")
     // private String KAKAO_CLIENT_ID;
@@ -374,8 +376,8 @@ public class AuthServiceImpl implements AuthService {
             String GENERATED_ACCESS_TOKEN = generateAccessToken(user.getEmail(), user.getRoles());
             String GENERATED_REFRESH_TOKEN = generateRefreshToken(user.getEmail());
 
-            // String key = "REFRESH_TOKEN:" + user.getEmail();
-            // redisTemplate.opsForValue().set(key, GENERATED_REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
+            String key = "REFRESH_TOKEN:" + user.getEmail();
+            redisTemplate.opsForValue().set(key, GENERATED_REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
 
             return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
                     .isGuide(user.getUserRole().equals(UserRole.GUIDE))
@@ -470,9 +472,9 @@ public class AuthServiceImpl implements AuthService {
 
         String USER_EMAIL = jwtTokenProvider.getUserEmailByToken(tokenRequestDto.getRefreshToken());
 
-        // if(!tokenRequestDto.getRefreshToken().equals(redisTemplate.opsForValue().get("REFRESH_TOKEN:" + USER_EMAIL))) {
-        //     throw new RuntimeException("유효하지 않은 Refresh Token");
-        // }
+        if(!tokenRequestDto.getRefreshToken().equals(redisTemplate.opsForValue().get("REFRESH_TOKEN:" + USER_EMAIL))) {
+            throw new RuntimeException("유효하지 않은 Refresh Token");
+        }
 
         try {
             UserDetails userDetails = userDetailsService.loadUserByUsername(USER_EMAIL);
@@ -482,8 +484,8 @@ public class AuthServiceImpl implements AuthService {
 
             String REFRESH_TOKEN = jwtTokenProvider.createRefreshToken(userDetails.getUsername());
             String ACCESS_TOKEN = jwtTokenProvider.createAccessToken(userDetails.getUsername(), roles);
-            // String key = "REFRESH_TOKEN:" + userDetails.getUsername();
-            // redisTemplate.opsForValue().set(key, REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
+            String key = "REFRESH_TOKEN:" + userDetails.getUsername();
+            redisTemplate.opsForValue().set(key, REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
 
             return ResponseEntity.status(HttpStatus.OK).body(TokenResponseDto.builder()
                     .accessToken(ACCESS_TOKEN)
