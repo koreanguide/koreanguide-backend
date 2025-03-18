@@ -25,11 +25,15 @@ import kr.yuns.auth.data.response.SignInResponseDto;
 import kr.yuns.auth.data.response.TokenResponseDto;
 import kr.yuns.auth.exception.UserNotFoundException;
 import kr.yuns.auth.service.AuthService;
+import kr.yuns.credit.data.dao.CreditDao;
+import kr.yuns.credit.data.entity.Credit;
+import kr.yuns.profile.data.dao.ProfileDao;
+import kr.yuns.profile.data.entity.Profile;
+import kr.yuns.profile.data.enums.Language;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,14 +41,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final UserDao userDao;
-    // private final CreditDao creditDao;
-    // private final ProfileDao profileDao;
+    private final CreditDao creditDao;
+    private final ProfileDao profileDao;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final UserDetailsService userDetailsService;
     // private final MailService mailService;
     // private final RedisTemplate<String, String> redisTemplate;
-    // private final SignLogRepository signLogRepository;
 
     // @Value("${KAKAO.CLIENT.ID}")
     // private String KAKAO_CLIENT_ID;
@@ -326,25 +329,25 @@ public class AuthServiceImpl implements AuthService {
 
         userDao.saveUserEntity(user);
 
-        // creditDao.saveCreditEntity(Credit.builder()
-        //         .recentUsed(LocalDateTime.now())
-        //         .amount(0L)
-        //         .user(user)
-        //         .build());
+        creditDao.saveCreditEntity(Credit.builder()
+                .recentUsed(LocalDateTime.now())
+                .amount(0L)
+                .user(user)
+                .build());
 
-        // profileDao.saveProfileEntity(Profile.builder()
-        //         .isPublic(true)
-        //         .introduce(null)
-        //         .phoneNum(null)
-        //         .firstLang(Language.KOREAN)
-        //         .secondLang(Language.ENGLISH)
-        //         .subwayLine(null)
-        //         .subwayStation(null)
-        //         .birth(null)
-        //         .name(null)
-        //         .profileCompleteCouponUsed(false)
-        //         .user(user)
-        //         .build());
+        profileDao.saveProfileEntity(Profile.builder()
+                .isPublic(true)
+                .introduce(null)
+                .phoneNum(null)
+                .firstLang(Language.KOREAN)
+                .secondLang(Language.ENGLISH)
+                .subwayLine(null)
+                .subwayStation(null)
+                .birth(null)
+                .name(null)
+                .profileCompleteCouponUsed(false)
+                .user(user)
+                .build());
 
         return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
                 .isGuide(user.getUserRole().equals(UserRole.GUIDE))
@@ -373,11 +376,6 @@ public class AuthServiceImpl implements AuthService {
 
             // String key = "REFRESH_TOKEN:" + user.getEmail();
             // redisTemplate.opsForValue().set(key, GENERATED_REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
-
-            // signLogRepository.save(SignLog.builder()
-            //                 .user(user)
-            //                 .dt(LocalDateTime.now())
-            //         .build());
 
             return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
                     .isGuide(user.getUserRole().equals(UserRole.GUIDE))
