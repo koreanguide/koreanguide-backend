@@ -8,7 +8,6 @@ import kr.yuns.profile.data.dto.request.ChangeNearSubwayRequestDto;
 import kr.yuns.profile.data.dto.request.ChangePasswordRequestDto;
 import kr.yuns.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
 import kr.yuns.profile.data.dto.request.ChangeProfileRequestDto;
-import kr.yuns.profile.data.dto.response.MainProfileAlertResponseDto;
 
 public interface ProfileService {
     ResponseEntity<?> getUserProfile(Long userId);

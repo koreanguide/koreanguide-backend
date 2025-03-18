@@ -4,11 +4,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.sound.midi.Track;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +20,7 @@ import kr.yuns.profile.data.dto.request.ChangeNearSubwayRequestDto;
 import kr.yuns.profile.data.dto.request.ChangePasswordRequestDto;
 import kr.yuns.profile.data.dto.request.ChangeProfileNonPasswordRequestDto;
 import kr.yuns.profile.data.dto.request.ChangeProfileRequestDto;
-import kr.yuns.profile.data.dto.response.InfoBoxResponseDto;
-import kr.yuns.profile.data.dto.response.MainInfoResponseDto;
-import kr.yuns.profile.data.dto.response.MainProfileAlertResponseDto;
 import kr.yuns.profile.data.dto.response.MyPageInfoResponseDto;
-import kr.yuns.profile.data.dto.response.MyPageResponseDto;
 import kr.yuns.profile.data.dto.response.ProfileResponseDto;
 import kr.yuns.profile.data.entity.Profile;
 import kr.yuns.profile.data.enums.Language;

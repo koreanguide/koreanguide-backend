@@ -33,6 +33,7 @@ public class CreditReturningRequest {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private ReturningStatus returningStatus = ReturningStatus.PENDING;
 
     @Column(nullable = false)

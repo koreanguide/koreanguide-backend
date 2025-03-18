@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class BankAccountApplyRequestDto {
+    @Builder.Default
     private AccountProvider bankAccountProvider = AccountProvider.SHINHAN;
     private String bankAccountNumber;
     private String name;

@@ -12,5 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TransactionCreditRequestDto {
     private Long amount;
+
+    @Builder.Default
     private TransactionContent transactionContent = TransactionContent.WITHDRAW_TO_ACCOUNT;
 }
