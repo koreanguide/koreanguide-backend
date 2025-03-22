@@ -2,7 +2,8 @@ package kr.yuns.auth.service.Impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-// import org.springframework.data.redis.core.RedisTemplate;
+
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,6 +26,11 @@ import kr.yuns.auth.data.response.SignInResponseDto;
 import kr.yuns.auth.data.response.TokenResponseDto;
 import kr.yuns.auth.exception.UserNotFoundException;
 import kr.yuns.auth.service.AuthService;
+import kr.yuns.credit.data.dao.CreditDao;
+import kr.yuns.credit.data.entity.Credit;
+import kr.yuns.profile.data.dao.ProfileDao;
+import kr.yuns.profile.data.entity.Profile;
+import kr.yuns.profile.data.enums.Language;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -37,14 +43,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final UserDao userDao;
-    // private final CreditDao creditDao;
-    // private final ProfileDao profileDao;
+    private final CreditDao creditDao;
+    private final ProfileDao profileDao;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final UserDetailsService userDetailsService;
     // private final MailService mailService;
-    // private final RedisTemplate<String, String> redisTemplate;
-    // private final SignLogRepository signLogRepository;
+    private final RedisTemplate<String, String> redisTemplate;
 
     // @Value("${KAKAO.CLIENT.ID}")
     // private String KAKAO_CLIENT_ID;
@@ -326,25 +331,25 @@ public class AuthServiceImpl implements AuthService {
 
         userDao.saveUserEntity(user);
 
-        // creditDao.saveCreditEntity(Credit.builder()
-        //         .recentUsed(LocalDateTime.now())
-        //         .amount(0L)
-        //         .user(user)
-        //         .build());
+        creditDao.saveCreditEntity(Credit.builder()
+                .recentUsed(LocalDateTime.now())
+                .amount(0L)
+                .user(user)
+                .build());
 
-        // profileDao.saveProfileEntity(Profile.builder()
-        //         .isPublic(true)
-        //         .introduce(null)
-        //         .phoneNum(null)
-        //         .firstLang(Language.KOREAN)
-        //         .secondLang(Language.ENGLISH)
-        //         .subwayLine(null)
-        //         .subwayStation(null)
-        //         .birth(null)
-        //         .name(null)
-        //         .profileCompleteCouponUsed(false)
-        //         .user(user)
-        //         .build());
+        profileDao.saveProfileEntity(Profile.builder()
+                .isPublic(true)
+                .introduce(null)
+                .phoneNum(null)
+                .firstLang(Language.KOREAN)
+                .secondLang(Language.ENGLISH)
+                .subwayLine(null)
+                .subwayStation(null)
+                .birth(null)
+                .name(null)
+                .profileCompleteCouponUsed(false)
+                .user(user)
+                .build());
 
         return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
                 .isGuide(user.getUserRole().equals(UserRole.GUIDE))
@@ -371,13 +376,8 @@ public class AuthServiceImpl implements AuthService {
             String GENERATED_ACCESS_TOKEN = generateAccessToken(user.getEmail(), user.getRoles());
             String GENERATED_REFRESH_TOKEN = generateRefreshToken(user.getEmail());
 
-            // String key = "REFRESH_TOKEN:" + user.getEmail();
-            // redisTemplate.opsForValue().set(key, GENERATED_REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
-
-            // signLogRepository.save(SignLog.builder()
-            //                 .user(user)
-            //                 .dt(LocalDateTime.now())
-            //         .build());
+            String key = "REFRESH_TOKEN:" + user.getEmail();
+            redisTemplate.opsForValue().set(key, GENERATED_REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
 
             return ResponseEntity.status(HttpStatus.OK).body(SignInResponseDto.builder()
                     .isGuide(user.getUserRole().equals(UserRole.GUIDE))
@@ -472,9 +472,9 @@ public class AuthServiceImpl implements AuthService {
 
         String USER_EMAIL = jwtTokenProvider.getUserEmailByToken(tokenRequestDto.getRefreshToken());
 
-        // if(!tokenRequestDto.getRefreshToken().equals(redisTemplate.opsForValue().get("REFRESH_TOKEN:" + USER_EMAIL))) {
-        //     throw new RuntimeException("유효하지 않은 Refresh Token");
-        // }
+        if(!tokenRequestDto.getRefreshToken().equals(redisTemplate.opsForValue().get("REFRESH_TOKEN:" + USER_EMAIL))) {
+            throw new RuntimeException("유효하지 않은 Refresh Token");
+        }
 
         try {
             UserDetails userDetails = userDetailsService.loadUserByUsername(USER_EMAIL);
@@ -484,8 +484,8 @@ public class AuthServiceImpl implements AuthService {
 
             String REFRESH_TOKEN = jwtTokenProvider.createRefreshToken(userDetails.getUsername());
             String ACCESS_TOKEN = jwtTokenProvider.createAccessToken(userDetails.getUsername(), roles);
-            // String key = "REFRESH_TOKEN:" + userDetails.getUsername();
-            // redisTemplate.opsForValue().set(key, REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
+            String key = "REFRESH_TOKEN:" + userDetails.getUsername();
+            redisTemplate.opsForValue().set(key, REFRESH_TOKEN, 1209600, TimeUnit.SECONDS);
 
             return ResponseEntity.status(HttpStatus.OK).body(TokenResponseDto.builder()
                     .accessToken(ACCESS_TOKEN)

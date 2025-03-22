@@ -12,9 +12,9 @@ import kr.yuns.profile.data.dto.response.MainProfileAlertResponseDto;
 
 public interface ProfileService {
     ResponseEntity<?> getUserProfile(Long userId);
-    // ResponseEntity<MainProfileAlertResponseDto> getMainPageProfileAlert(Long userId);
-    // ResponseEntity<?> depositMainPageProfileCompleteCredit(Long userId);
-    // ResponseEntity<?> getUserInfo(Long userId);
+    ResponseEntity<MainProfileAlertResponseDto> getMainPageProfileAlert(Long userId);
+    ResponseEntity<?> depositMainPageProfileCompleteCredit(Long userId);
+    ResponseEntity<?> getUserInfo(Long userId);
     ResponseEntity<?> changeName(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
     ResponseEntity<?> changePhoneNum(Long userId, ChangeProfileRequestDto changeProfileRequestDto);
     ResponseEntity<?> removeProfileUrl(Long userId);
@@ -28,5 +28,5 @@ public interface ProfileService {
     ResponseEntity<?> changeNearSubway(Long userId, ChangeNearSubwayRequestDto changeNearSubwayRequestDto);
     ResponseEntity<?> changeAddress(Long userId, ChangeAddressRequestDto changeAddressRequestDto);
     ResponseEntity<?> changeBirth(Long userId, ChangeBrithReqeustDto changeBrithReqeustDto);
-    // ResponseEntity<?> getInfoBoxInfo(Long userId);
+    ResponseEntity<?> getInfoBoxInfo(Long userId);
 }

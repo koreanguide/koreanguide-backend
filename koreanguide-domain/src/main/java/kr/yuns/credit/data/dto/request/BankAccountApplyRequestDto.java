@@ -1,0 +1,18 @@
+package kr.yuns.credit.data.dto.request;
+
+import kr.yuns.credit.data.enums.AccountProvider;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class BankAccountApplyRequestDto {
+    @Builder.Default
+    private AccountProvider bankAccountProvider = AccountProvider.SHINHAN;
+    private String bankAccountNumber;
+    private String name;
+}
