@@ -12,12 +12,14 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import jakarta.mail.MessagingException;
 import kr.yuns.JwtTokenProvider;
 import kr.yuns.auth.data.dao.UserDao;
 import kr.yuns.auth.data.entity.User;
 import kr.yuns.auth.data.enums.KoreaState;
 import kr.yuns.auth.data.enums.SignType;
 import kr.yuns.auth.data.enums.UserRole;
+import kr.yuns.auth.data.request.ResetPasswordRequestDto;
 import kr.yuns.auth.data.request.SignInRequestDto;
 import kr.yuns.auth.data.request.SignUpRequestDto;
 import kr.yuns.auth.data.request.TokenRequestDto;
@@ -28,6 +30,10 @@ import kr.yuns.auth.exception.UserNotFoundException;
 import kr.yuns.auth.service.AuthService;
 import kr.yuns.credit.data.dao.CreditDao;
 import kr.yuns.credit.data.entity.Credit;
+import kr.yuns.mail.data.enums.MailType;
+import kr.yuns.mail.exception.KeyIncorrectException;
+import kr.yuns.mail.exception.MailResendTimeException;
+import kr.yuns.mail.service.MailService;
 import kr.yuns.profile.data.dao.ProfileDao;
 import kr.yuns.profile.data.entity.Profile;
 import kr.yuns.profile.data.enums.Language;
@@ -48,7 +54,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final UserDetailsService userDetailsService;
-    // private final MailService mailService;
+    private final MailService mailService;
     private final RedisTemplate<String, String> redisTemplate;
 
     // @Value("${KAKAO.CLIENT.ID}")
@@ -194,77 +200,77 @@ public class AuthServiceImpl implements AuthService {
     //             .build());
     // }
 
-    // @Override
-    // public ResponseEntity<SignAlertResponseDto> validateKey(MailType mailType, String targetEmail, String key) {
-    //     try {
-    //         mailService.validateKey(mailType, targetEmail, key);
-    //         return ResponseEntity.status(HttpStatus.OK).build();
-    //     } catch (KeyIncorrectException e) {
-    //         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-    //                 SignAlertResponseDto.builder()
-    //                         .ko("이메일 인증 번호가 일치하지 않습니다.")
-    //                         .en("Email authentication number does not match.")
-    //                         .build());
-    //     }
-    // }
+    @Override
+    public ResponseEntity<SignAlertResponseDto> validateKey(MailType mailType, String targetEmail, String key) {
+        try {
+            mailService.validateKey(mailType, targetEmail, key);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } catch (KeyIncorrectException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    SignAlertResponseDto.builder()
+                            .ko("이메일 인증 번호가 일치하지 않습니다.")
+                            .en("Email authentication number does not match.")
+                            .build());
+        }
+    }
 
-    // @Override
-    // public ResponseEntity<?> sendVerifyMail(String to) throws MessagingException {
-    //     if(userDao.checkAlreadyExistUserByEmail(to)) {
-    //         return ResponseEntity.status(HttpStatus.CONFLICT).body(SignAlertResponseDto.builder()
-    //                         .en("This email address is already registered with the service. " +
-    //                                 "Please use a different email address or try to sign-in.")
-    //                         .ko("이미 서비스에 등록된 이메일 주소입니다. 다른 이메일 주소를 사용하거나 로그인을 시도하십시오.")
-    //                 .build());
-    //     }
+    @Override
+    public ResponseEntity<?> sendVerifyMail(String to) throws MessagingException {
+        if(userDao.checkAlreadyExistUserByEmail(to)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(SignAlertResponseDto.builder()
+                            .en("This email address is already registered with the service. " +
+                                    "Please use a different email address or try to sign-in.")
+                            .ko("이미 서비스에 등록된 이메일 주소입니다. 다른 이메일 주소를 사용하거나 로그인을 시도하십시오.")
+                    .build());
+        }
 
-    //     if(!matchEmailPattern(to)) {
-    //         throw new RuntimeException("이메일 형식 입력 오류");
-    //     }
+        if(!matchEmailPattern(to)) {
+            throw new RuntimeException("이메일 형식 입력 오류");
+        }
 
-    //     try {
-    //         mailService.sendMail(MailType.REGISTER_VERIFY, to);
+        try {
+            mailService.sendMail(MailType.REGISTER_VERIFY, to);
 
-    //         return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
-    //                 .en("A membership authentication email has been sent normally.")
-    //                 .ko("회원가입 인증 이메일이 정상적으로 발송되었습니다.")
-    //                 .build());
-    //     } catch (MailResendTimeException e) {
-    //         return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
-    //                 .en("You can resend the email authentication after " + e.getMessage() + ".")
-    //                 .ko(e.getMessage() + " 후에 이메일 인증 재발송이 가능합니다.")
-    //                 .build());
-    //     }
-    // }
+            return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
+                    .en("A membership authentication email has been sent normally.")
+                    .ko("회원가입 인증 이메일이 정상적으로 발송되었습니다.")
+                    .build());
+        } catch (MailResendTimeException e) {
+            return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
+                    .en("You can resend the email authentication after " + e.getMessage() + ".")
+                    .ko(e.getMessage() + " 후에 이메일 인증 재발송이 가능합니다.")
+                    .build());
+        }
+    }
 
-    // @Override
-    // public ResponseEntity<?> requestVerifyMail(String to) throws MessagingException {
-    //     if(userDao.checkAlreadyExistUserByEmail(to)) {
-    //         return ResponseEntity.status(HttpStatus.CONFLICT).body(SignAlertResponseDto.builder()
-    //                         .en("This email address is already registered with the service. " +
-    //                                 "Please use a different email address or try to sign-in.")
-    //                         .ko("이미 서비스에 등록된 이메일 주소입니다. 다른 이메일 주소를 사용하거나 로그인을 시도하십시오.")
-    //                 .build());
-    //     }
+    @Override
+    public ResponseEntity<?> requestVerifyMail(String to) throws MessagingException {
+        if(userDao.checkAlreadyExistUserByEmail(to)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(SignAlertResponseDto.builder()
+                            .en("This email address is already registered with the service. " +
+                                    "Please use a different email address or try to sign-in.")
+                            .ko("이미 서비스에 등록된 이메일 주소입니다. 다른 이메일 주소를 사용하거나 로그인을 시도하십시오.")
+                    .build());
+        }
 
-    //     if(!matchEmailPattern(to)) {
-    //         throw new RuntimeException("이메일 형식 입력 오류");
-    //     }
+        if(!matchEmailPattern(to)) {
+            throw new RuntimeException("이메일 형식 입력 오류");
+        }
 
-    //     try {
-    //         mailService.requestMail(MailType.REGISTER_VERIFY, to);
+        try {
+            mailService.requestMail(MailType.REGISTER_VERIFY, to);
 
-    //         return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
-    //                 .en("The authentication number will arrive soon at the email you requested.")
-    //                 .ko("요청하신 이메일로 인증번호가 곧 도착합니다.")
-    //                 .build());
-    //     } catch (MailResendTimeException e) {
-    //         return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
-    //                 .en("You can resend the email authentication after " + e.getMessage() + ".")
-    //                 .ko(e.getMessage() + " 후에 이메일 인증 재발송이 가능합니다.")
-    //                 .build());
-    //     }
-    // }
+            return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
+                    .en("The authentication number will arrive soon at the email you requested.")
+                    .ko("요청하신 이메일로 인증번호가 곧 도착합니다.")
+                    .build());
+        } catch (MailResendTimeException e) {
+            return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
+                    .en("You can resend the email authentication after " + e.getMessage() + ".")
+                    .ko(e.getMessage() + " 후에 이메일 인증 재발송이 가능합니다.")
+                    .build());
+        }
+    }
 
     @Override
     public ResponseEntity<?> signUp(SignUpRequestDto signUpRequestDto) {
@@ -287,16 +293,16 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
-        // try {
-        //     mailService.validateKey(MailType.REGISTER_VERIFY, signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey());
-        // } catch (KeyIncorrectException e) {
-        //     return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(
-        //             SignAlertResponseDto.builder()
-        //                     .ko("이메일 인증 유효 시간이 만료되었습니다. 이메일 인증을 다시 시도하십시오.")
-        //                     .en("Email authentication has expired. Please try email authentication again.")
-        //                     .build()
-        //     );
-        // }
+        try {
+            mailService.validateKey(MailType.REGISTER_VERIFY, signUpRequestDto.getEmail(), signUpRequestDto.getAuthKey());
+        } catch (KeyIncorrectException e) {
+            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(
+                    SignAlertResponseDto.builder()
+                            .ko("이메일 인증 유효 시간이 만료되었습니다. 이메일 인증을 다시 시도하십시오.")
+                            .en("Email authentication has expired. Please try email authentication again.")
+                            .build()
+            );
+        }
 
         if(!matchEmailPattern(signUpRequestDto.getEmail())) {
             throw new RuntimeException("이메일 형식 입력 오류");
@@ -391,78 +397,78 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    // @Override
-    // public ResponseEntity<?> resetPassword(ResetPasswordRequestDto resetPasswordRequestDto) {
-    //     if(!matchEmailPattern(resetPasswordRequestDto.getEmail())) {
-    //         throw new RuntimeException("이메일 형식 입력 오류");
-    //     }
+    @Override
+    public ResponseEntity<?> resetPassword(ResetPasswordRequestDto resetPasswordRequestDto) {
+        if(!matchEmailPattern(resetPasswordRequestDto.getEmail())) {
+            throw new RuntimeException("이메일 형식 입력 오류");
+        }
 
-    //     try {
-    //         mailService.validateKey(MailType.RESET_PASSWORD_VERIFY, resetPasswordRequestDto.getEmail(),
-    //                 resetPasswordRequestDto.getValidateKey());
-    //     } catch (KeyIncorrectException e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-    //     }
+        try {
+            mailService.validateKey(MailType.RESET_PASSWORD_VERIFY, resetPasswordRequestDto.getEmail(),
+                    resetPasswordRequestDto.getValidateKey());
+        } catch (KeyIncorrectException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
 
-    //     String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
+        String passwordPattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$";
 
-    //     if(!passwordPattern.matches(passwordPattern)) {
-    //         return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(SignAlertResponseDto.builder()
-    //                         .en("Password cannot be used. Configure your password with at least 8 " +
-    //                                 "English characters, at least 1 special character, at least 1 " +
-    //                                 "uppercase character, and at least 1 character number.")
-    //                         .ko("사용할 수 없는 비밀번호입니다. 영문 8자리 이상, 1개 이상의 특수문자, 1자 이상의 대문자, " +
-    //                                 "1자 이상의 숫자를 이용하여 비밀번호를 구성하십시오.")
-    //                 .build());
-    //     }
+        if(!passwordPattern.matches(passwordPattern)) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(SignAlertResponseDto.builder()
+                            .en("Password cannot be used. Configure your password with at least 8 " +
+                                    "English characters, at least 1 special character, at least 1 " +
+                                    "uppercase character, and at least 1 character number.")
+                            .ko("사용할 수 없는 비밀번호입니다. 영문 8자리 이상, 1개 이상의 특수문자, 1자 이상의 대문자, " +
+                                    "1자 이상의 숫자를 이용하여 비밀번호를 구성하십시오.")
+                    .build());
+        }
 
-    //     try {
-    //         User user = userDao.getUserEntityByEmail(resetPasswordRequestDto.getEmail());
+        try {
+            User user = userDao.getUserEntityByEmail(resetPasswordRequestDto.getEmail());
 
-    //         if(passwordEncoder.matches(resetPasswordRequestDto.getPassword(), user.getPassword())) {
-    //             return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
-    //                     .en("The new password is not different from the current password.")
-    //                     .ko("새로운 비밀번호가 현재 비밀번호와 다르지 않습니다.")
-    //                     .build());
-    //         }
+            if(passwordEncoder.matches(resetPasswordRequestDto.getPassword(), user.getPassword())) {
+                return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
+                        .en("The new password is not different from the current password.")
+                        .ko("새로운 비밀번호가 현재 비밀번호와 다르지 않습니다.")
+                        .build());
+            }
 
-    //         user.setPassword(passwordEncoder.encode(resetPasswordRequestDto.getPassword()));
+            user.setPassword(passwordEncoder.encode(resetPasswordRequestDto.getPassword()));
 
-    //         userDao.saveUserEntity(user);
+            userDao.saveUserEntity(user);
 
-    //         return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
-    //                 .ko("비밀번호 변경이 정상적으로 완료되었습니다.")
-    //                 .en("The password change has been completed successfully.")
-    //                 .build());
-    //     } catch (UserNotFoundException e) {
-    //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(SignAlertResponseDto.builder()
-    //                 .ko("입력한 이메일 주소로 등록된 회원을 찾을 수 없습니다. 이메일 주소를 다시 한 번 확인하십시오.")
-    //                 .en("No registered members could be found with the email address you entered. " +
-    //                         "Please double check your email address.")
-    //                 .build());
-    //     }
-    // }
+            return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
+                    .ko("비밀번호 변경이 정상적으로 완료되었습니다.")
+                    .en("The password change has been completed successfully.")
+                    .build());
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(SignAlertResponseDto.builder()
+                    .ko("입력한 이메일 주소로 등록된 회원을 찾을 수 없습니다. 이메일 주소를 다시 한 번 확인하십시오.")
+                    .en("No registered members could be found with the email address you entered. " +
+                            "Please double check your email address.")
+                    .build());
+        }
+    }
 
-    // @Override
-    // public ResponseEntity<?> sendResetPasswordVerifyMail(String to) throws MessagingException {
-    //     if(!matchEmailPattern(to)) {
-    //         throw new RuntimeException("이메일 형식 입력 오류");
-    //     }
+    @Override
+    public ResponseEntity<?> sendResetPasswordVerifyMail(String to) throws MessagingException {
+        if(!matchEmailPattern(to)) {
+            throw new RuntimeException("이메일 형식 입력 오류");
+        }
 
-    //     try {
-    //         mailService.sendMail(MailType.RESET_PASSWORD_VERIFY, to);
+        try {
+            mailService.sendMail(MailType.RESET_PASSWORD_VERIFY, to);
 
-    //         return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
-    //                 .en("A password reset authentication email has been sent successfully.")
-    //                 .ko("비밀번호 재설정 인증 이메일이 정상적으로 발송되었습니다.")
-    //                 .build());
-    //     } catch (MailResendTimeException e) {
-    //         return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
-    //                 .en("You can resend the email authentication after " + e.getMessage() + ".")
-    //                 .ko(e.getMessage() + " 후에 이메일 인증 재발송이 가능합니다.")
-    //                 .build());
-    //     }
-    // }
+            return ResponseEntity.status(HttpStatus.OK).body(SignAlertResponseDto.builder()
+                    .en("A password reset authentication email has been sent successfully.")
+                    .ko("비밀번호 재설정 인증 이메일이 정상적으로 발송되었습니다.")
+                    .build());
+        } catch (MailResendTimeException e) {
+            return ResponseEntity.status(HttpStatus.LOCKED).body(SignAlertResponseDto.builder()
+                    .en("You can resend the email authentication after " + e.getMessage() + ".")
+                    .ko(e.getMessage() + " 후에 이메일 인증 재발송이 가능합니다.")
+                    .build());
+        }
+    }
 
     @Override
     public ResponseEntity<?> refreshToken(TokenRequestDto tokenRequestDto) {

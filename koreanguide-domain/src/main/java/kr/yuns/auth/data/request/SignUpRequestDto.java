@@ -19,7 +19,7 @@ public class SignUpRequestDto {
 //    비밀번호
     private String password;
 //    인증 키
-    // private String authKey;
+    private String authKey;
 //    시군구
     private SeoulCountry country;
 }
