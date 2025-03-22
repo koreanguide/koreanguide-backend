@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 
 @RestController
@@ -54,7 +55,7 @@ public class SeoulController {
     }
 
     @GetMapping("/weather")
-    public ResponseEntity<?> getSeoulWeather(HttpServletRequest request) throws IOException {
+    public ResponseEntity<?> getSeoulWeather(HttpServletRequest request) throws IOException, URISyntaxException {
         return seoulService.getSeoulWeather(GET_USER_ID_BY_TOKEN(request));
     }
 
