@@ -6,5 +6,6 @@ import lombok.Data;
 @Data
 @Builder
 public class FileResponseDto {
+    private String uuid;
     private String url;
 }

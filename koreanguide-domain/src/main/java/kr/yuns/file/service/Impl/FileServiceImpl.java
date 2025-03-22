@@ -1,5 +1,7 @@
 package kr.yuns.file.service.Impl;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import kr.yuns.auth.data.dao.UserDao;
@@ -38,34 +40,49 @@ public class FileServiceImpl implements FileService {
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
-    @Override
-    public ResponseEntity<FileResponseDto> saveFile(MultipartFile multipartFile, FileDivision division, Long userId) throws IOException {
-        User user = userDao.getUserEntity(userId);
+    public String uploadFiles(MultipartFile file) throws AmazonServiceException, SdkClientException, IOException {
+        String originFileName = file.getOriginalFilename();
 
-        String originalFilename = multipartFile.getOriginalFilename();
-        assert originalFilename != null;
-        @SuppressWarnings("null")
-        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        if(originFileName == null) {
+            throw new IllegalArgumentException("File name is empty");
+        }
+
+        String extension = originFileName.substring(originFileName.lastIndexOf("."));
         String uuidFilename = UUID.randomUUID() + extension;
 
         ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(multipartFile.getSize());
-        metadata.setContentType(multipartFile.getContentType());
+        metadata.setContentLength(file.getSize());
+        metadata.setContentType(file.getContentType());
 
-        amazonS3Client.putObject(bucket, uuidFilename, multipartFile.getInputStream(), metadata);
+        amazonS3Client.putObject(bucket, uuidFilename, file.getInputStream(), metadata);
 
-        String FILE_URL = amazonS3Client.getUrl(bucket, uuidFilename).toString();
+        return uuidFilename;
+    }
+
+    void saveFileLog(String uuid, FileDivision division, Long userId) {
+        User user = userDao.getUserEntity(userId);
 
         filesRepository.save(Files.builder()
-                .user(user)
-                .url(FILE_URL)
+                .uploadedUser(user)
+                .uuid(uuid)
                 .division(division)
                 .createdAt(LocalDateTime.now())
                 .build());
+    }
+
+    public String getUrl(String uuid) {
+        return amazonS3Client.getUrl(bucket, uuid).toString();
+    }
+
+    @Override
+    public ResponseEntity<FileResponseDto> saveFile(MultipartFile file, FileDivision division, Long userId) throws IOException {
+        String uuid = uploadFiles(file);
+        saveFileLog(uuid, division, userId);
 
         return ResponseEntity.status(HttpStatus.OK).body(
             FileResponseDto.builder()
-                .url(FILE_URL)
+                .uuid(uuid)
+                .url(getUrl(uuid))
             .build());
     }
 }

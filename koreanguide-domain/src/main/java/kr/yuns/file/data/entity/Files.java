@@ -21,10 +21,10 @@ public class Files {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user;
+    private User uploadedUser;
 
     @Column(nullable = false)
-    private String url;
+    private String uuid;
 
     @Column(nullable = false)
     @Builder.Default
