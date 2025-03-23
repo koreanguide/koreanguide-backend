@@ -9,5 +9,4 @@ jar {
 dependencies {
     implementation project(':koreanguide-common')
     implementation project(':koreanguide-domain')
-    implementation project(':koreanguide-websocket')
 }
