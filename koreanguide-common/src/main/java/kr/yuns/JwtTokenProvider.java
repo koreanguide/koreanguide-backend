@@ -51,17 +51,6 @@ public class JwtTokenProvider {
         return createToken(email, new ArrayList<>(), refreshTokenValidMillisecond);
     }
 
-    // private String createToken(String email, List<String> roles, long validMillisecond) {
-    //     Date now = new Date();
-
-    //     return Jwts.builder()
-    //         .signWith(Jwts.SIG.HS512.key().build())
-    //         .claims().subject(email).add("roles", roles).and()
-    //         .issuedAt(now)
-    //         .expiration(new Date(now.getTime() + validMillisecond))
-    //         .compact();
-    // }
-
     @SuppressWarnings("deprecation")
     public String createToken(String email, List<String> roles, long validMillisecond) {
         Date now = new Date();
@@ -84,7 +73,7 @@ public class JwtTokenProvider {
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
-                .parseSignedClaims(token)
+                .parseSignedClaims(resolveTokenViaToken(token))
                 .getPayload();
     
         return claims.getSubject();
@@ -117,6 +106,13 @@ public class JwtTokenProvider {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
+        }
+        return null;
+    }
+
+    public String resolveTokenViaToken(String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            return token.substring(7);
         }
         return null;
     }

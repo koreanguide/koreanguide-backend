@@ -64,6 +64,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/auth/signup").permitAll()
                         .requestMatchers(PATTERNS).permitAll()
                         .requestMatchers("/api/v1/**").hasRole("USER")
+                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

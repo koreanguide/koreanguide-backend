@@ -15,8 +15,6 @@ public class ChatMessageDto {
     private MessageType messageType;
 //    채팅방 ID
     private String chatRoomId;
-//    전송자 ID
-    private Long senderId;
 //    메시지
     private String message;
 //    전체 기능 사용 여부

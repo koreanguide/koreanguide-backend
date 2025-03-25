@@ -3,6 +3,7 @@ package kr.yuns.chat.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.transaction.Transactional;
+import kr.yuns.JwtTokenProvider;
 import kr.yuns.auth.data.dao.UserDao;
 import kr.yuns.auth.data.entity.User;
 import kr.yuns.chat.data.dao.ChatDao;
@@ -35,6 +36,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private final UserDao userDao;
     private final ChatDao chatDao;
     private final TrackDao trackDao;
+    private final JwtTokenProvider tokenProvider;
+
+    public User GET_USER_ENTITY_BY_TOKEN(String token) {
+        return userDao.getUserEntityByEmail(tokenProvider.getUserEmailByToken(token));
+    }
 
     @Override
     public void afterConnectionEstablished(@SuppressWarnings("null") WebSocketSession session) {
@@ -46,7 +52,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
     @Transactional
     public void handleTextMessage(@SuppressWarnings("null") WebSocketSession session, @SuppressWarnings("null") TextMessage message) throws Exception {
         String payload = message.getPayload();
-        log.info("[WebSocket] Session connected, Session Payload: {}", message.getPayload());
 
         ChatMessageDto chatMessageDto = objectMapper.readValue(payload, ChatMessageDto.class);
         log.info("[WebSocket] Session connected, Session ID: {}", chatMessageDto.toString());
@@ -65,7 +70,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             removeClosedSession(chatRoomSession);
         }
 
-        User user = userDao.getUserEntity(chatMessageDto.getSenderId());
+        User user = GET_USER_ENTITY_BY_TOKEN(session.getHandshakeHeaders().getFirst("Authorization"));
         ChatRoom chatRoom = chatDao.getChatRoomEntity(chatMessageDto.getChatRoomId());
 
         LocalDateTime CURRENT_TIME = LocalDateTime.now();
